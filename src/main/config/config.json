@@ -1,0 +1,10 @@
+{
+    "access-token": "<yourovhAIendpointsaccess_token>",
+    
+    "url_model_llm": "https://mixtral-8x7b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1/chat/completions",
+    "model_llm": "Mixtral-8x7B-Instruct-v0.1",
+    "max_token_llm": 1028,
+    "temperature_llm": 0,
+
+    "url_embedding_model": "https://bge-multilingual-gemma2.endpoints.kepler.ai.cloud.ovh.net/api/text2vec"
+}
