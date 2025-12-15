@@ -1,0 +1,10 @@
+# Used for prod purposes (hot server reload). If this file exists, it will be used by docker, if not, the stadard one without
+# devs features will be used (this file SHOULD NOT BE PRESENT on production servers.)
+
+services:
+  backend:
+    volumes:
+      # whaterver happens in ProjetKosmioBack will also happen in /app inside the container. ONLY FOR DEV PURPOSES
+      - .:/app
+    # Adding the --reload option for hot reloading after a change in code
+    command: uvicorn src.main.run:app --host 0.0.0.0 --port 8000 --reload
