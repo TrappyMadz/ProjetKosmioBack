@@ -39,7 +39,7 @@ class LlmService():
             print("Error:", response.status_code)
 
     #TODO
-    def rag_nlp_completion(self, question, retrieved_sentences):
+    def rag_nlp_completion(self, retrieved_sentences):
         url = self.config.url_model_llm
 
         messages = [

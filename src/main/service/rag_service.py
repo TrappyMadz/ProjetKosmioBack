@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from service.database_vect_service.database_vect_service import  DatabaseVectService
 from service.llm_service.llm_service import LlmService
 import os
-from service.document_service.img_service import ImgService
 from service.document_service.pdf_service import PdfService
 
 

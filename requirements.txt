@@ -2,10 +2,8 @@ chromadb
 langchain-text-splitters
 requests
 langchain_community
-python-docx
-python-pptx
 pypdf
 flask
 PyPDF2
 langchain_core
-flasgger
+python-dotenv

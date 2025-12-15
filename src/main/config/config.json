@@ -1,5 +1,5 @@
 {
-    "access-token": "<yourovhAIendpointsaccess_token>",
+    "access-token": "@@OVH_TOKEN_PLACEHOLDER@@",
     
     "url_model_llm": "https://mixtral-8x7b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1/chat/completions",
     "model_llm": "Mixtral-8x7B-Instruct-v0.1",
