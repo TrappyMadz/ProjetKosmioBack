@@ -28,6 +28,6 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./src/main/service/bdd_service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "${BACKEND_DB_PORT}:5433"
+      - "${BACKEND_DB_PORT}:5432"
 volumes:
   pgdata:
