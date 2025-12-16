@@ -1,9 +1,29 @@
 # ajout d'élements dans la base de données et création de la base de données
-
 import psycopg2
-
 from psycopg2.extras import Json
 import os
+
+class PostgresService:
+    def __init__(sellf):
+        self.db_url = os.getenv("DATABASE_URL")
+
+    def _get_connection(self):
+        """
+        Fonction permettant de se connecter à la bdd.
+        Retourne la connexion si tout fonctionne, None sinon.
+        """
+        try:
+            return psycopg2.connect(self.db_url)
+        except Exception as exception:
+            print(f"Erreur de connexion à la BDD : {exception}")
+            return None
+
+    # ---Fonction create---
+    def new(self, data):
+        """
+        Insère une nouvelle fiche JSON complète dans la base de donnée.
+        data doit être un dictionnaire contenant : type, title, metadata
+        """
 
 ## pour tester faire bdd_service.test() dans run.py
 def test():
