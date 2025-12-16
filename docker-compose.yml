@@ -26,7 +26,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./src/main/service/bdd_service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "${BACKEND_DB_PORT}:5432"
+      - "${BACKEND_DB_PORT}:5433"
 volumes:
   pgdata:
