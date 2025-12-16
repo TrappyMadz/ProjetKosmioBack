@@ -1,10 +1,10 @@
 # ajout d'élements dans la base de données et création de la base de données
 import psycopg2
-from psycopg2.extras import Json
+from psycopg2.extras import Json, RealDictCursor
 import os
 
 class PostgresService:
-    def __init__(sellf):
+    def __init__(self):
         self.db_url = os.getenv("DATABASE_URL")
 
     def _get_connection(self):
@@ -18,12 +18,78 @@ class PostgresService:
             print(f"Erreur de connexion à la BDD : {exception}")
             return None
 
-    # ---Fonction create---
-    def new(self, data):
+    # ---Fonction CREATE---
+    def insert_new_fiche(self, data):
         """
         Insère une nouvelle fiche JSON complète dans la base de donnée.
-        data doit être un dictionnaire contenant : type, title, metadata
+        data doit être un dictionnaire contenant : type, title, metadata, summary, content, contribution et traceability
+        Retourne l'id si tous ses bien passé, none sinon
         """
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor() as cursor:
+                query = """
+                INSERT INTO fiche_en_json
+                (type, title, metadata, summary, content, contribution, traceability)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id;
+                """
+                # On utilisera Json() pour convertir les dictionnaires python en Json
+                cursor.execute(query, (
+                    data.get("type"),
+                    data.get("title"),
+                    Json(data.get("metadata", {})),
+                    data.get("summary"),
+                    Json(data.get("content", {})),
+                    Json(data.get("contribution", {})),
+                    Json(data.get("traceability", {}))
+                ))
+                new_id = cursor.fetchone()[0]
+                connection.commit()
+                print(f"Fiche créer avec ID : {new_id}")
+                return new_id
+        except Exception as exception:
+            connection.rollback()
+            print(f"Erreur lor de la création de la fiche : {exception}")
+            return None
+        finally:
+            connection.close()
+
+    # ---Fonction READALL---
+    def get_all_fiches(self):
+        """
+        Récupère toutes les fiches. Retourne None si il y a eu un problème, un tableau contenant toutes les fiches sinon
+        """
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json;")
+                return cursor.fetchall()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture des fiches : {exception}")
+            return None
+        finally:
+            connection.close() 
+
+     # ---Fonction READONE---
+    def get_fiche_by_id(self, id):
+        """
+        Récupère la fiche d'id "id". Retourne None si il y a eu un problème, un tableau contenant la fiche sinon
+        """
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json WHERE id = %s;", (id, ))
+                return cursor.fetchone()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture de la fiche {id} : {exception}")
+            return None
+        finally:
+            connection.close() 
+
 
 ## pour tester faire bdd_service.test() dans run.py
 def test():
