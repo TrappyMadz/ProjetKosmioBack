@@ -43,11 +43,11 @@ class LlmService():
             print("Error:", response.status_code)
 
     #requete solution
-    def solution_request(self):
+    def mistral_request_solution(self):
         self.mistral_request(self.prompt_solution)
 
     #requete secteur
-    def secteur_request(self):
+    def mistral_request_secteur(self):
         self.mistral_request(self.prompt_secteur)
 
     #TODO
