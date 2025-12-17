@@ -2,7 +2,11 @@ from controller import rag_controller
 import os
 import json
 from dotenv import load_dotenv
+<<<<<<< HEAD
 import uvicorn
+=======
+from service.bdd_service.bdd_service import PostgresService
+>>>>>>> CrudFunctionsPastLlm
 
 app = rag_controller.rag_app
 

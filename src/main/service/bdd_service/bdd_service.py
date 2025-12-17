@@ -1,9 +1,167 @@
 # ajout d'élements dans la base de données et création de la base de données
-
 import psycopg2
-
-from psycopg2.extras import Json
+from psycopg2.extras import Json, RealDictCursor
 import os
+
+class PostgresService:
+    def __init__(self):
+        self.db_url = os.getenv("DATABASE_URL")
+
+    def _get_connection(self):
+        """
+        Fonction permettant de se connecter à la bdd.
+        Retourne la connexion si tout fonctionne, Raise une exception sinon
+        """
+        try:
+            return psycopg2.connect(self.db_url)
+        except Exception as exception:
+            print(f"Erreur de connexion à la BDD : {exception}")
+            raise exception
+
+    # ---Fonction CREATE---
+    def insert_new_fiche(self, data):
+        """
+        Insère une nouvelle fiche JSON complète dans la base de donnée.
+        data doit être un dictionnaire contenant : type, title, metadata, summary, content, contribution et traceability
+        Retourne l'id si tous ses bien passé, peut raise une exception si la connexion échoue ou si l'insertion échoue.
+        """
+        connection = self._get_connection()
+        try:
+            with connection.cursor() as cursor:
+                query = """
+                INSERT INTO fiche_en_json
+                (type, title, metadata, summary, content, contribution, traceability)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id;
+                """
+                # On utilisera Json() pour convertir les dictionnaires python en Json
+                cursor.execute(query, (
+                    data.get("type"),
+                    data.get("title"),
+                    Json(data.get("metadata", {})),
+                    data.get("summary"),
+                    Json(data.get("content", {})),
+                    Json(data.get("contribution", {})),
+                    Json(data.get("traceability", {}))
+                ))
+                new_id = cursor.fetchone()[0]
+                connection.commit()
+                print(f"Fiche créer avec ID : {new_id}")
+                return new_id
+        except Exception as exception:
+            connection.rollback()
+            print(f"Erreur lecture SQL : {exception}")
+            raise exception
+        finally:
+            connection.close()
+
+    # ---Fonction READALL---
+    def get_all_fiches(self):
+        """
+        Récupère toutes les fiches. Retourne un tableau contenant toutes les fiches et raise une exception si la connexion ou la requête échoue.
+        """
+        connection = self._get_connection()
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json;")
+                return cursor.fetchall()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture des fiches : {exception}")
+            raise exception
+        finally:
+            connection.close() 
+
+     # ---Fonction READONE---
+    def get_fiche_by_id(self, id):
+        """
+        Récupère la fiche d'id "id". Retourne un tableau contenant la fiche, None si la fiche n'existe pas, et raise une exception si la connection ou la lecture échoue
+        """
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json WHERE id = %s;", (id, ))
+                return cursor.fetchone()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture de la fiche {id} : {exception}")
+            return -1
+        finally:
+            connection.close() 
+
+        # --Fonction FULLUPDATE---
+    def update_fiche(self, id, data):
+        """
+        Met à jour une fiche existante. Cette fonction remplace TOUTES les données.
+        Retourne l'id de la fiche en cas de réussite, None si la fiche n'existe pas, et soulève une exception si la connexion échoue ou si l'update échoue
+        """
+        connection = self._get_connection()
+
+        try:
+            with connection.cursor() as cursor:
+                query = """
+                UPDATE fiche_en_json
+                SET type = %s,
+                    title = %s,
+                    metadata = %s,
+                    summary = %s,
+                    content = %s,
+                    contribution = %s,
+                    traceability = %s
+                WHERE id = %s;
+                """
+
+                cursor.execute(query, (
+                    data.get("type"),
+                    data.get("title"),
+                    Json(data.get("metadata", {})),
+                    data.get("summary"),
+                    Json(data.get("content", {})),
+                    Json(data.get("contribution", {})),
+                    Json(data.get("traceability", {})),
+                    id
+                ))
+                connection.commit()
+
+                # On vérifie que la mise à jour à fonctionnée (rowcount définie le nombre de lignes modifiées)
+                if cursor.rowcount > 0:
+                    print(f"Fiche {id} mise à jour avec succès.")
+                    return id
+                else:
+                    print(f"Aucune fiche trouvée avec l'id {id}.")
+                    return None
+        except Exception as exception:
+            connection.rollback()
+            print(f"Erreur pendant l'update : {exception}")
+            raise exception
+        finally:
+            connection.close()
+
+    def delete_fiche(self, id):
+        """
+        Supprime la fiche avec l'id id. Renvoie l'id si la supression s'est bien passée, None si l'id n'existait pas, et soulève une exception si la connexion
+        à la base de donnée échoue ou si il y a un autre problème.
+        """
+        connection = self._get_connection()
+        try:
+            with connection.cursor() as cursor:
+                query= "DELETE FROM fiche_en_json WHERE id = %s;"
+                cursor.execute(query, (id,))
+                connection.commit()
+                if cursor.rowcount > 0:
+                    print(f"Fiche {id} supprimée avec succès.")
+                    return id
+                else:
+                    print(f"Aucune fiche trouvée avec l'id {id}.")
+                    return None
+        except Exception as exception:
+            connection.rollback()
+            print(f"Erreur de suppression : {exception}")
+            raise exception
+        finally:
+            connection.close()
+
+
+
 
 ## pour tester faire bdd_service.test() dans run.py
 def test():
