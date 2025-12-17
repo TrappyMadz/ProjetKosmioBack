@@ -1,8 +1,26 @@
+import os
 import chromadb
+from chromadb.config import Settings
 
+def get_chroma_client():
+    # On récupère les infos injectées par Docker
+    host = os.getenv('CHROMA_HOST', 'localhost')
+    port = os.getenv('CHROMA_PORT', '5435')      
+    token = os.getenv('CHROMA_TOKEN')            
 
-client = chromadb.PersistentClient(path="~/.chroma")
+    print(f"Connexion à ChromaDB sur {host}:{port}...")
 
+    return chromadb.HttpClient(
+        host=host,
+        port=int(port),
+        settings=Settings(
+            chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+            chroma_client_auth_credentials=token
+        )
+    )
+
+# Utilisation
+client = get_chroma_client()
 
 class DatabaseVectService():
     def __init__(self, config):
