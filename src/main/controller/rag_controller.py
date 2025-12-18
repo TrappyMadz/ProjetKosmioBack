@@ -16,10 +16,14 @@ rag_service_instance = rag_service()
 async def home():
     return {"message": "Bonjour, bienvenue dans l'application wikiCO2 pfecytech2025"}
 
-@rag_app.post("/v1/process")
-async def process(pdf: UploadFile = File(...)):
+# solution et secteur
+@rag_app.post("/v1/process/solution")
+async def process_solution(pdf: UploadFile = File(...)):
     """
-    doc à écrire
+    Cette api prend un pdf et renvoie à l'utilisateur :
+    - Si le fichier n'est pas un pdf, une erreur 400
+    - Le json d'une solution classé correctement sous le format WO2 du contenu du pdf si tout s'est bien passé
+    - Une erreur 500 si une erreur se produit
     """
     # Vérification du type de fichier
     if not pdf.filename.endswith('.pdf'):
@@ -30,7 +34,32 @@ async def process(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
-        result = rag_service_instance.process(pdf.file)
+        result = rag_service_instance.process_solution(pdf.file)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors du traitement du fichier: {str(e)}"
+        )
+
+@rag_app.post("/v1/process/sector")
+async def process_sector(pdf: UploadFile = File(...)):
+    """
+    Cette api prend un pdf et renvoie à l'utilisateur :
+    - Si le fichier n'est pas un pdf, une erreur 400
+    - Le json d'un secteur classé correctement sous le format WO2 du contenu du pdf si tout s'est bien passé
+    - Une erreur 500 si une erreur se produit
+    """
+    # Vérification du type de fichier
+    if not pdf.filename.endswith('.pdf'):
+        raise HTTPException(
+            status_code=400,
+            detail="Le fichier doit être un PDF"
+        )
+    
+    try:
+        # Traitement du fichier
+        result = rag_service_instance.process_sector(pdf.file)
         return result
     except Exception as e:
         raise HTTPException(
