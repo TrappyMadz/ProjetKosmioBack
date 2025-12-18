@@ -8,12 +8,17 @@ class LlmService():
     def __init__(self, config):
         self.config = config
 
-    #juste pour faire une requete mixtral simple
-    def mistral_request(self, content):
+    # requetes mistral
+    # Prend en entrée le texte (prompt déjà inclue) et print la réponse pour l'instant
+    def mistral_request_solution(self, content):
         url = self.config.url_model_llm
         payload = {
             "max_tokens": 512,
             "messages": [
+                {
+                    "content" : self.prompt_solution,
+                    "role" : "system"
+                },
                 {
                     "content": content,
                     "role": "user"
@@ -42,13 +47,43 @@ class LlmService():
         else:
             print("Error:", response.status_code)
 
-    #requete solution
-    def mistral_request_solution(self):
-        self.mistral_request(self.prompt_solution)
 
-    #requete secteur
-    def mistral_request_secteur(self):
-        self.mistral_request(self.prompt_secteur)
+    def mistral_request_secteur(self, content):
+        url = self.config.url_model_llm
+        payload = {
+            "max_tokens": 512,
+            "messages": [
+                {
+                    "content" : self.prompt_secteur,
+                    "role" : "system"
+                },
+                {
+                    "content": content,
+                    "role": "user"
+                }
+            ],
+            "model": self.config.model_llm,
+            "temperature": 0,
+            "response_format": {"type": "json_object"}
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        response = requests.post(url, json=payload, headers=headers, verify=False)
+        if response.status_code == 200:
+            # Handle response
+            response_data = response.json()
+            # Parse JSON response
+            choices = response_data["choices"]
+            for choice in choices:
+                text = choice["message"]["content"]
+                # Process text and finish_reason
+                print(text)
+        else:
+            print("Error:", response.status_code)
 
     #TODO
     def rag_nlp_completion(self, retrieved_sentences):
