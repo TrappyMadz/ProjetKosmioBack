@@ -1,6 +1,9 @@
 import os
 import chromadb
 from chromadb.config import Settings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_chroma_client():
     # On récupère les infos injectées par Docker
