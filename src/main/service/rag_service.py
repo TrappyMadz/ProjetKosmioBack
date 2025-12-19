@@ -29,12 +29,16 @@ class rag_service():
 
     #TODO
     def process(self, file):
+        ## on récupère le fichier pdf
         file_like = io.BytesIO(file)
         file_like.filename = "a.pdf"  # Ajouter l'attribut filename
 
-        collection = self.database_vect_service.get_or_create_collection("test")
+        ## on crée une collection chroma
+        collection = self.database_vect_service.get_or_create_collection(file_like.filename)
         
         document_to_load = PdfService(file_like, self.config)
+
+        #On extrait la donnée du pdf
         extract = document_to_load.extract_data()
         
         ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
@@ -46,6 +50,11 @@ class rag_service():
 
         ## store in db vect
         self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+
+        ## retrieve from db vect
+        
+
+
 
 if __name__ == "__main__":
     rag_service_instance = rag_service()
