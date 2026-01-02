@@ -28,7 +28,7 @@ class rag_service():
         self.llm_service = LlmService(self.config)
 
     #TODO
-    def process(self, file):
+    def process_sector(self, file):
         ## on récupère le fichier pdf
         file_like = io.BytesIO(file)
         file_like.filename = "a.pdf"  # Ajouter l'attribut filename

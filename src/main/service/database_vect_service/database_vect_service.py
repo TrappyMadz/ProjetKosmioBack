@@ -66,7 +66,7 @@ class DatabaseVectService():
     def delete_collection(self, collection_name):
         client.delete_collection(collection_name)
 
-    # simiarity query
+    # similarity query
     def query(self, collection, embedded_question, number_results):
         return collection.query(
                 query_embeddings=embedded_question,
