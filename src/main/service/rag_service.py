@@ -20,7 +20,7 @@ def load_file(file):
 
 class rag_service():
     def __init__(self):  #remettre src/main
-        self.config = Config(load_file("config/config.json"))
+        self.config = Config(load_file("src/main/config/config.json"))
         # services declaration
         self.chunk_service = ChunkService(self.config)
         self.embedding_service = EmbeddingService(self.config)
@@ -34,7 +34,7 @@ class rag_service():
         file_like.filename = "a.pdf"  # Ajouter l'attribut filename
 
         ## on crée une collection chroma
-        collection = self.database_vect_service.get_or_create_collection(file_like.filename)
+        collection = self.database_vect_service.get_or_create_collection("c.pdf")
         
         document_to_load = PdfService(file_like, self.config)
 
@@ -45,13 +45,27 @@ class rag_service():
         proceed = document_to_load.proceed_data(extract)
         ## chunk media
         document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
+        print(f"document chunked :{document_chunked}\n")
         ## embed media
-        document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
+        #document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
 
         ## store in db vect
-        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+        #self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+
+        ##embedding question
+        embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SECTOR_QUERIES)
+        print(f"embedded fields: {embedded_fields}\n")
 
         ## retrieve from db vect
+        results_dict = {}
+        for field, embedding in embedded_fields.items():
+            results = collection.query(
+                query_embeddings=embedding,
+                n_results=3,
+            )
+            results_dict[field] = results
+            print(f"Résultats pour le champ {results_dict}")
+        
         
 
 
@@ -68,4 +82,4 @@ if __name__ == "__main__":
         pdf_bytes = f.read()  # Lire tout le contenu en bytes
     
     # Passer les bytes à process
-    rag_service_instance.process(pdf_bytes)
+    rag_service_instance.process_sector(pdf_bytes)

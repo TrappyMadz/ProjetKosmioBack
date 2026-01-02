@@ -1,5 +1,5 @@
 {
-    "access-token": "@@OVH_TOKEN_PLACEHOLDER@@",
+    "access-token": "eyJhbGciOiJFZERTQSIsImtpZCI6IjgzMkFGNUE5ODg3MzFCMDNGM0EzMTRFMDJFRUJFRjBGNDE5MUY0Q0YiLCJraW5kIjoicGF0IiwidHlwIjoiSldUIn0.eyJ0b2tlbiI6ImtWcDJNUzh5NnJnODF6MnBvR1NseXg1T3E3Y3VacnNIcVBtelJ5VnIwV0U9In0.ep1Ev5pg_8qokOJUuSNUWBYLGts4AoSaXrpeqHaHPdXNnDx5h2IJgoZrQPrDRgiCjM-r1clGNXT_vK3NjwxEDg",
     
     "url_model_llm": "https://mixtral-8x7b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1/chat/completions",
     "model_llm": "Mixtral-8x7B-Instruct-v0.1",
