@@ -79,6 +79,12 @@ Utilisez docker compose pour construire et lancer les conteneurs :
 docker compose up --build
 ```
 
+lancer rag_service
+```
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src/main
+python3 src/main/service/rag_service.py
+```
+
 _(Ajoutez l'option `-d` pour le lancer en arrière plan)_
 
 ## Fonctionnement
