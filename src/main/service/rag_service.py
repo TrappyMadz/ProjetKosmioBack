@@ -10,6 +10,7 @@ from service.embedding_service.embedding_service import EmbeddingService
 import json
 from model.config import Config
 from constant import rag_constant
+import json
 
 
 def load_file(file):
@@ -70,10 +71,11 @@ class rag_service():
                 results_dict[field] = documents[0]
             else:
                 results_dict[field] = []
-        print(f"Résultats pour le champ {results_dict}")
         
         ##On va donner results_dict au llm pour qu'il génère une réponse
-        
+        dict_to_string = json.dumps(results_dict, ensure_ascii=False)
+        mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
+        print(f"Réponse LLM secteur : {mistral_request_secteur}")
         
 
 
