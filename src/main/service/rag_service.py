@@ -36,16 +36,16 @@ class rag_service():
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection("c.pdf")
         
-        document_to_load = PdfService(file_like, self.config)
-
-        #On extrait la donnée du pdf
-        extract = document_to_load.extract_data()
-        
-        ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
-        proceed = document_to_load.proceed_data(extract)
-        ## chunk media
-        document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
-        print(f"document chunked :{document_chunked}\n")
+        #document_to_load = PdfService(file_like, self.config)
+#
+        ##On extrait la donnée du pdf
+        #extract = document_to_load.extract_data()
+        #
+        ###Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
+        #proceed = document_to_load.proceed_data(extract)
+        ### chunk media
+        #document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
+        #print(f"document chunked :{document_chunked}\n")
         ## embed media
         #document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
 
@@ -54,7 +54,6 @@ class rag_service():
 
         ##embedding question
         embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SECTOR_QUERIES)
-        print(f"embedded fields: {embedded_fields}\n")
 
         ## retrieve from db vect
         results_dict = {}
@@ -63,8 +62,17 @@ class rag_service():
                 query_embeddings=embedding,
                 n_results=3,
             )
-            results_dict[field] = results
-            print(f"Résultats pour le champ {results_dict}")
+            # Extraction des documents uniquement
+            documents = results.get("documents", [])
+
+            # documents = [[doc1, doc2, doc3]] → on aplati
+            if documents and len(documents) > 0:
+                results_dict[field] = documents[0]
+            else:
+                results_dict[field] = []
+        print(f"Résultats pour le champ {results_dict}")
+        
+        ##On va donner results_dict au llm pour qu'il génère une réponse
         
         
 
