@@ -46,7 +46,7 @@ class PostgresService:
                 ))
                 new_id = cursor.fetchone()[0]
                 connection.commit()
-                print(f"Fiche créer avec ID : {new_id}")
+                print(f"Fiche créée avec ID : {new_id}")
                 return new_id
         except Exception as exception:
             connection.rollback()
