@@ -90,10 +90,10 @@ class rag_service():
         ## on récupère le fichier pdf
         file_like = io.BytesIO(file)
         file_like.filename = "a.pdf"  # Ajouter l'attribut filename
-
-        # on crée une collection chroma
+#
+        ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(file_like.filename)
-        
+        #
         document_to_load = PdfService(file_like, self.config)
 
         #On extrait la donnée du pdf
@@ -111,7 +111,7 @@ class rag_service():
         self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
 
         #embedding question
-        embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SECTOR_QUERIES)
+        embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SOLUTION_QUERIES)
 
         ## retrieve from db vect
         results_dict = {}
@@ -144,7 +144,7 @@ class rag_service():
 
 if __name__ == "__main__":
     rag_service_instance = rag_service()
-    
+     
     # Lire le PDF en bytes (comme l'API le reçoit)
     import os
     base_path = os.path.dirname(__file__)
@@ -154,4 +154,4 @@ if __name__ == "__main__":
         pdf_bytes = f.read()  # Lire tout le contenu en bytes
     
     # Passer les bytes à process
-    rag_service_instance.process_sector(pdf_bytes)
+    rag_service_instance.process_solution(pdf_bytes)

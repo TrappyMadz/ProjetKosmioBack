@@ -1,6 +1,8 @@
+import os
+
 class Config:
     def __init__(self, jsonData):
-        self._access_token = jsonData['access-token']
+        self._access_token = os.getenv("OVH_API_KEY") if os.getenv("OVH_API_KEY") else jsonData['access-token']
         
         self._url_model_llm = jsonData['url_model_llm']
         self._model_llm = jsonData['model_llm']

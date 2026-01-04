@@ -44,9 +44,7 @@ class EmbeddingService():
 
     def embedding_bge_multilingual_batch(self, dict_text):
         """
-        Docstring for embedding_bge_multilingual_batch
-        
-        :param self: instance of EmbeddingService
+        :param self: instance de EmbeddingService
         :param dict_text: constante définie dans rag_constant.py décrivant les éléments des fiches solutions et secteurs
         """
         response_data = {}  # dictionnaire pour stocker les résultats

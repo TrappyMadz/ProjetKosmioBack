@@ -44,8 +44,13 @@ class LlmService():
             choices = response_data["choices"]
             for choice in choices:
                 text = choice["message"]["content"]
-                # Process text and finish_reason
-                print(text)
+                try:
+                    data = json.loads(text)
+                    print(data)
+                    return data
+                except json.JSONDecodeError:
+                    print("Failed to parse JSON:", text)
+                    return text
         else:
             print("Error:", response.status_code)
 
