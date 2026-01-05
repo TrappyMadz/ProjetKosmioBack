@@ -14,18 +14,18 @@ rag_app = FastAPI(
 )
 
 frontend_port = os.getenv("FRONTEND_PORT")
-custom_origin = "http://localhost:/" + frontend_port
+custom_origin = "http://localhost:" + frontend_port
 
 origins = [
-    custom_origin
+    custom_origin,
 ]
 
 rag_app.add_middleware(
     CORSMiddleware,
     allow_origins = origins,
     allow_credentials=True,
-    allow_methods=[""],
-    allow_headers=["",]
+    allow_methods=["*"],
+    allow_headers=["*",]
 )
 
 # Initialisation du service
