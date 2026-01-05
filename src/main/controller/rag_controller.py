@@ -1,12 +1,31 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from service.rag_service import rag_service
+from dotenv import load_dotenv
+import os
 
 # Initialisation de l'application FastAPI
+load_dotenv() 
 rag_app = FastAPI(
     title="WikiCO2 API",
     description="API pour le traitement de documents PDF avec RAG",
     version="1.0.0"
+)
+
+frontend_port = os.getenv("FRONTEND_PORT")
+custom_origin = "http://localhost:/" + frontend_port
+
+origins = [
+    custom_origin
+]
+
+rag_app.add_middleware(
+    CORSMiddleware,
+    allow_origins = origins,
+    allow_credentials=True,
+    allow_methods=[""],
+    allow_headers=["",]
 )
 
 # Initialisation du service

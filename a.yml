@@ -1,0 +1,213 @@
+openapi: "3.1.0"
+info:
+  title: "WikiCO2 API"
+  version: "1.0.0"
+  description: "Cette api permet de prendre un pdf décrivant un projet Wiki CO2 et de le \"convertir\" en Json respectant les normes de présentation Wiki CO2 grâce à Mistral. <br><br>
+
+Ce document ne sert qu'à titre d'exemple pour le moment et n'est pas encore interactif. <br>"
+
+servers:
+  - url: "http://localhost:8000/"
+    description: "Serveur backend locale"
+
+paths:
+  /:
+    get:
+      summary: "Home"
+      description: "Chemin par défaut, renvoie un message de bienvenue sur l'api"
+      responses:
+        "200":
+          description: "Serveur contacté avec succès"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bonjour, bienvenue dans l'application wikiCO2 pfecytech2025"
+
+  /v1/process/solution:
+    post:
+      summary: "Traiter une solution (PDF)"
+      description: "Prend un PDF en entrée, l'analyse via le RAG et retourne le JSON structuré."
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+                  description: "Le fichier PDF à analyser."
+      responses:
+        "200":
+          description: 'Succès : Analyse terminée'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiCO2JsonSolution'
+        "400":
+          description: "Erreur Client : Le fichier n'est pas un PDF."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Le fichier doit être un PDF"
+        "500":
+          description: "Erreur Serveur : Problème lors du traitement RAG."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Erreur lors du traitement du fichier: ..."
+
+  /v1/process/sector:
+      post:
+        summary: "Traiter un secteur (PDF)"
+        description: "Prend un PDF en entrée, l'analyse via le RAG et retourne le JSON structuré pour un secteur."
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  pdf:
+                    type: string
+                    format: binary
+                    description: "Le fichier PDF du secteur à analyser."
+        responses:
+          "200":
+            description: "Succès : Analyse du secteur terminée"
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/WikiCO2JsonSector'
+          "400":
+            description: "Erreur Client : Le fichier n'est pas un PDF."
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Le fichier doit être un PDF"
+          "500":
+            description: "Erreur Serveur : Problème lors du traitement RAG."
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Erreur lors du traitement du fichier: ..."
+
+components:
+  schemas:
+    WikiCO2JsonSolution:
+      type: object
+      description: "Structure standardisée WikiCO2 générée par le LLM"
+      properties:
+        type:
+          type: string
+          example: "solution"
+          description: "Type de document (solution ou secteur)"
+        title:
+          type: string
+          example: "Installation de Pompes à Chaleur"
+        summary:
+          type: string
+          description: "Un résumé global du document"
+        metadata:
+          type: object
+          description: "Métadonnées extraites (taille entreprise, dates, etc.)"
+          example: 
+            company_size: "PME"
+            last_update: "2025-10-10"
+        content:
+          type: object
+          description: "Le contenu détaillé et structuré (Use cases, descriptions, etc.)"
+          properties:
+            description: 
+              type: string
+            use_cases:
+              type: array
+              items:
+                type: object
+        contribution:
+          type: object
+          properties:
+            validator:
+              type: string
+            completeness:
+              type: string
+        traceability:
+          type: object
+          description: "Lien vers la source et confiance de l'extraction"
+          properties:
+            source_pdf:
+              type: string
+              example: "mon_fichier.pdf"
+            extraction_confidence:
+              type: number
+              format: float
+              example: 0.95
+    WikiCO2JsonSector:
+      type: object
+      description: "Structure standardisée WikiCO2 générée par le LLM"
+      properties:
+        type:
+          type: string
+          example: "secteur"
+          description: "Type de document (solution ou secteur)"
+        title:
+          type: string
+          example: "Installation de Pompes à Chaleur"
+        summary:
+          type: string
+          description: "Un résumé global du document"
+        metadata:
+          type: object
+          description: "Métadonnées extraites (taille entreprise, dates, etc.)"
+          example: 
+            company_size: "PME"
+            last_update: "2025-10-10"
+        content:
+          type: object
+          description: "Le contenu détaillé et structuré (Use cases, descriptions, etc.)"
+          properties:
+            description: 
+              type: string
+            use_cases:
+              type: array
+              items:
+                type: object
+        contribution:
+          type: object
+          properties:
+            validator:
+              type: string
+            completeness:
+              type: string
+        traceability:
+          type: object
+          description: "Lien vers la source et confiance de l'extraction"
+          properties:
+            source_pdf:
+              type: string
+              example: "mon_fichier.pdf"
+            extraction_confidence:
+              type: number
+              format: float
+              example: 0.95
