@@ -10,11 +10,16 @@ from service.embedding_service.embedding_service import EmbeddingService
 import json
 from model.config import Config
 from constant import rag_constant
+<<<<<<< HEAD
 from fastapi import UploadFile
 from config.logging_config import get_logger
 
 # Logger pour ce module
 logger = get_logger("rag_service")
+=======
+import json
+from fastapi import UploadFile
+>>>>>>> 4e8eea9 (feat : api available)
 
 
 def load_file(file):
@@ -38,21 +43,31 @@ class rag_service():
     
     def process_sector(self, file):    
         filename = file.filename
+<<<<<<< HEAD
         logger.info(f"Traitement du secteur - fichier: {filename}")
         
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
+=======
+        ## on crée une collection chroma
+        collection = self.database_vect_service.get_or_create_collection(filename)
+        
+>>>>>>> 4e8eea9 (feat : api available)
         document_to_load = PdfService(file, self.config)
 
         ##On extrait la donnée du pdf
         extract = document_to_load.extract_data()
+<<<<<<< HEAD
         logger.debug("Extraction des données PDF terminée")
+=======
+>>>>>>> 4e8eea9 (feat : api available)
         
         ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
         proceed = document_to_load.proceed_data(extract)
         ## chunk media
         document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
+<<<<<<< HEAD
         logger.debug(f"Document découpé en {len(document_chunked)} chunks")
         
         # embed media
@@ -68,6 +83,14 @@ class rag_service():
         ## store in db vect
         self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
         logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
+=======
+        print(f"document chunked :{document_chunked}\n")
+        # embed media
+        document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
+
+        ## store in db vect
+        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+>>>>>>> 4e8eea9 (feat : api available)
 
         #embedding question
         embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES)
@@ -106,8 +129,11 @@ class rag_service():
 
     def process_solution(self, file):
         filename = file.filename
+<<<<<<< HEAD
         logger.info(f"Traitement de la solution - fichier: {filename}")
         
+=======
+>>>>>>> 4e8eea9 (feat : api available)
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -178,7 +204,11 @@ if __name__ == "__main__":
     rag_service_instance = rag_service()
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
+<<<<<<< HEAD
         rag_service_instance.process_sector(mock_pdf)
 
+=======
+        rag_service_instance.process_solution(mock_pdf)
+>>>>>>> 4e8eea9 (feat : api available)
 
 
