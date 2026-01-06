@@ -11,6 +11,7 @@ import json
 from model.config import Config
 from constant import rag_constant
 import json
+from fastapi import UploadFile
 
 
 def load_file(file):
@@ -22,6 +23,7 @@ def load_file(file):
 class rag_service():
     def __init__(self):  #remettre src/main
         self.config = Config(load_file("src/main/config/config.json"))
+
         # services declaration
         self.chunk_service = ChunkService(self.config)
         self.embedding_service = EmbeddingService(self.config)
@@ -30,29 +32,26 @@ class rag_service():
         self.bdd_service = PostgresService()
 
     
-    def process_sector(self, file):
-        ## on récupère le fichier pdf
-        file_like = io.BytesIO(file)
-        file_like.filename = "a.pdf"  # Ajouter l'attribut filename
-
+    def process_sector(self, file):    
+        filename = file.filename
         ## on crée une collection chroma
-        collection = self.database_vect_service.get_or_create_collection("c.pdf")
+        collection = self.database_vect_service.get_or_create_collection(filename)
         
-        #document_to_load = PdfService(file_like, self.config)
-#
+        document_to_load = PdfService(file, self.config)
+
         ##On extrait la donnée du pdf
-        #extract = document_to_load.extract_data()
-        #
-        ###Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
-        #proceed = document_to_load.proceed_data(extract)
-        ### chunk media
-        #document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
-        #print(f"document chunked :{document_chunked}\n")
-        ## embed media
-        #document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
+        extract = document_to_load.extract_data()
+        
+        ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
+        proceed = document_to_load.proceed_data(extract)
+        ## chunk media
+        document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
+        print(f"document chunked :{document_chunked}\n")
+        # embed media
+        document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
 
         ## store in db vect
-        #self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
 
         #embedding question
         embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SECTOR_QUERIES)
@@ -87,14 +86,11 @@ class rag_service():
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
 
     def process_solution(self, file):
-        ## on récupère le fichier pdf
-        file_like = io.BytesIO(file)
-        file_like.filename = "a.pdf"  # Ajouter l'attribut filename
-#
-        ## on crée une collection chroma
-        collection = self.database_vect_service.get_or_create_collection(file_like.filename)
-        #
-        document_to_load = PdfService(file_like, self.config)
+        filename = file.filename
+        ## on crée une collection chroma qui portera le nom du fichier
+        collection = self.database_vect_service.get_or_create_collection(filename)
+        
+        document_to_load = PdfService(file, self.config)
 
         #On extrait la donnée du pdf
         extract = document_to_load.extract_data()
@@ -143,15 +139,10 @@ class rag_service():
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
 
 if __name__ == "__main__":
+    #test simulé comme utilisé avec l'api
     rag_service_instance = rag_service()
-     
-    # Lire le PDF en bytes (comme l'API le reçoit)
-    import os
-    base_path = os.path.dirname(__file__)
-    pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
-    
-    with open(pdf_path, 'rb') as f:
-        pdf_bytes = f.read()  # Lire tout le contenu en bytes
-    
-    # Passer les bytes à process
-    rag_service_instance.process_solution(pdf_bytes)
+    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
+        mock_pdf = UploadFile(file=f, filename="a.pdf")
+        rag_service_instance.process_solution(mock_pdf)
+
+

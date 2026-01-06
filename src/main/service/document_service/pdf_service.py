@@ -12,12 +12,15 @@ class PdfService(BaseService):
         self.config = config
 
     def extract_data(self):
-        # read file
-        file_stream = io.BytesIO(self.file.read())
+        #lecture des bytes du pdf
+        content = self.file.file.read() 
+        file_stream = io.BytesIO(content)
         reader = PdfReader(file_stream)   
         
-        pdf_service = Extractdata(reader, 'PDF_SERVICE', self.file.filename)
-        return pdf_service
+        # On remet le curseur à zéro pour les lectures suivantes
+        self.file.file.seek(0)
+        
+        return Extractdata(reader, 'PDF_SERVICE', self.file.filename)
 
     def proceed_data(self, extract_data):
         documents = []
