@@ -87,6 +87,8 @@ async def process_sector(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
+        result = rag_service_instance.process_sector(pdf.file)
+        return result
         logger.info(f"Traitement d'un secteur - fichier: {pdf.filename}")
         result = rag_service_instance.process_sector(pdf)
         logger.info(f"Secteur traité avec succès - fichier: {pdf.filename}")
