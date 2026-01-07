@@ -33,7 +33,7 @@ class rag_service():
 
     
     def process_sector(self, file):    
-        filename = file.filename
+        filename = "sector"
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -86,7 +86,7 @@ class rag_service():
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
 
     def process_solution(self, file):
-        filename = file.filename
+        filename = "solution_"
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
