@@ -42,10 +42,14 @@ class rag_service():
 
     
     def process_sector(self, file):    
+<<<<<<< HEAD
         filename = file.filename
 <<<<<<< HEAD
         logger.info(f"Traitement du secteur - fichier: {filename}")
         
+=======
+        filename = "sector"
+>>>>>>> 94c3f28 (fix : filename gestion temporary fix)
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -128,12 +132,16 @@ class rag_service():
         return fiche_secteur_json
 
     def process_solution(self, file):
+<<<<<<< HEAD
         filename = file.filename
 <<<<<<< HEAD
         logger.info(f"Traitement de la solution - fichier: {filename}")
         
 =======
 >>>>>>> 4e8eea9 (feat : api available)
+=======
+        filename = "solution_"
+>>>>>>> 94c3f28 (fix : filename gestion temporary fix)
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
