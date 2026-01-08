@@ -2,7 +2,8 @@ import requests
 import json
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
-
+import service.llm_service.qualimetrie as qualimetrie 
+import math
 
 class LlmService():
     prompt_solution = "Tu est un modèle d’extraction d’information. Tu dois uniquement que extraire les mots clés. Si une information n'est pas trouvée, laisser la valeur de la clé vide.\n\n# Format de réponse\nTu dois renvoyer un JSON valide.\n Extrait les informations clés suivantes :\n\n- type : \"solution\"\n- id : vide\n- title : Le titre de la solution\n- metadata : un dictionnaire de 8 entrées :\n  - category : La catégorie de la solution\n  - system : Le système utilisé\n  - type : technique, organisationnelle ou comportentale suivant le type de solution\n  - maturity : \n  - cost_scale : trouver une échelle\n  - complexity : à quel point la solution est compliquée à mettre en place\n  - last_update : vide\n  - contributors : liste des entreprises qui ont contribué à la fiche\n- summary : un résumé de la solution\n- content : un dictionnaire de 9 entrées :\n  - context : un dictionnaire de 5 entrées :\n    - objective : l'objectif global de la solution\n    - target_sites : une liste des types de sites concernés (exemple : logements collectifs, tertiaire)\n    - scope_includes : une liste d'éléments inclus\n    - scope_excludes : une liste d'éléments exclus\n    - prerequisites : une liste de prérequis réglementaires, techniques ou organisationnels\n  - mecanism : un dictionnaire à 2 entrées :\n    - description : description simple du principe de fonctionnement\n    - variants : une liste des différentes variantes possibles\n  - applicability : un dictionnaire à 3 entrées :\n    - conditions : une liste des cas où l'usage de la solution est pertinent\n    - avoid_if : une liste des cas où l'usage est à éviter\n    - constraints : contraintes identifiées\n  - impacts : un dictionnaire de 4 entrées :\n    - energy : estimation qualitative ou valeur de l'énergie économisée ou valorisée\n    - co2 : ordre de grandeur ou fourchette du CO2 évité\n    - costs : un dictionnaire à 3 entrées :\n      - capex : dépenses d'investissement CAPEX avec chiffres\n      - opex : dépenses d'exploitation OPEX avec chiffres\n      - roi : retour sur investissement avec chiffres\n    - co_benefits : une liste des bénéfices apportés par la solution\n  - levers : une liste de leviers associés à la solution\n  - implementation_path : une liste de dictionnaires :\n    - step : Diagnostic initial, Dimensionnement, Installation, Suivi\n    - details : détails pour chaque étape\n  - risks : une liste de dictionnaires :\n    - risk : nom du risque\n    - mitigation : mesures de mitigation\n  - examples : une liste de dictionnaires de cas d'usage :\n    - secteur : secteur d'usage\n    - resume : explication de l'utilisation\n    - link : lien vers la fiche secteur\n  - resources : une liste de dictionnaires de ressources :\n    - title : titre de la ressource\n    - type : type de ressource\n    - link : lien de la ressource\n- contribution : un dictionnaire de 3 entrées :\n  - validation : vide\n  - history : liste vide\n  - improvement_proposal_link : vide\n- traceability : un dictionnaire de 3 entrées :\n  - source_pdf : vide\n  - extraction_confidence : vide\n  - chunks_used : liste vide\n\n# Directives\n- Les informations doivent uniquement provenir du texte fourni.\n-"
@@ -220,6 +221,168 @@ class LlmService():
 
 
 
+    def rag_nlp_completion(self, retrieved_sentences):
+        url = self.config.url_model_llm
+
+        messages = [
+            #preprompt
+            {"role": "system",
+             "content": (
+                    #préparer le preprompt en donnant les consignes ainsi que le modèle de sortie
+                )
+            },
+
+            {
+                "role": "user",
+                "content": f"""Informations fournies : {retrieved_sentences} \
+
+        """
+            }
+        ]
+
+        payload = {
+            "model": self.config.model_llm,
+            "temperature": 0,
+            "max_tokens": 2000,
+            "messages": messages
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        response = requests.post(url, json=payload, headers=headers, verify = False)
+        if response.status_code == 200:
+            response_data = response.json()
+            return response_data["choices"][0]["message"]["content"]
+        else:
+            print("Erreur:", response.status_code)
+            return None
+
+
+
+
+
+
+
+#################################################################################################################""
+# qualimetrie à intégrer
+
+
+    # requetes mistral
+    # Prend en entrée le texte (prompt déjà inclue) et print la réponse pour l'instant
+    def qualsolution(self, content):
+        url = self.config.url_model_llm
+        payload = {
+            "messages": [
+                {
+                    "content" : self.prompt_solution,
+                    "role" : "system"
+                },
+                {
+                    "content": content,
+                    "role": "user"
+                }
+            ],
+            "model": self.config.model_llm,
+            "temperature": 0.1,
+            "response_format": {
+                "type": "json_object",
+            },
+            "logprobs": True,
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        response = requests.post(url, json=payload, headers=headers, verify=False,timeout=600)
+        if response.status_code == 200:
+            # Handle response
+            response_data = response.json()
+            # Parse JSON response
+            choices = response_data["choices"]
+            for choice in choices:
+                text = choice["message"]["content"]
+
+                # récupérer les logprobs pour calculer la confiance de l'ia sur sa réponse
+                #logprobs = choice.get("logprobs").get("content")
+                #print("LOGPROBS :", logprobs)
+                
+                try:
+                    data = json.loads(text)
+
+                    print(data)
+
+                    tauxCompletion = qualimetrie.taux_remplissage(data)
+                    print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
+
+                    return data
+                except json.JSONDecodeError:
+                    print("Failed to parse JSON:", text)
+                    return text
+        else:
+            print("Error:", response.status_code)
+
+
+    def qualsecteur(self, content):
+        url = self.config.url_model_llm
+        payload = {
+            "messages": [
+                {
+                    "content" : self.prompt_secteur,
+                    "role" : "system"
+                },
+                {
+                    "content": content,
+                    "role": "user"
+                }
+            ],
+            "model": self.config.model_llm,
+            "temperature": 0.1,
+            "response_format": {
+                "type": "json_object"},
+            "logprobs": True,
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        response = requests.post(url, json=payload, headers=headers, verify=False)
+        if response.status_code == 200:
+            # Handle response
+            response_data = response.json()
+            # Parse JSON response
+            choices = response_data["choices"]
+            for choice in choices:
+                text = choice["message"]["content"]
+
+                # récupérer les logprobs pour calculer la confiance de l'ia sur sa réponse
+                #logprobs = choice.get("logprobs").get("content")
+                #print("LOGPROBS :", logprobs)
+
+                # Process text and finish_reason
+                try:
+                    data = json.loads(text)
+                    
+                    print(data)
+
+                    tauxCompletion = qualimetrie.taux_remplissage(data)
+                    print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
+
+                    return data
+
+                except json.JSONDecodeError:
+                    print("Failed to parse JSON:", text)
+                    return text
+        else:
+            print("Error:", response.status_code)
+
+    #TODO
     def rag_nlp_completion(self, retrieved_sentences):
         url = self.config.url_model_llm
 
