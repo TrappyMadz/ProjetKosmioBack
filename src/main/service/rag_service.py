@@ -33,7 +33,7 @@ class rag_service():
 
     
     def process_sector(self, file):    
-        filename = "sector"
+        filename = file.filename
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -72,21 +72,24 @@ class rag_service():
             else:
                 results_dict[field] = []
         
-        ###On va donner results_dict au llm pour qu'il génère une réponse
+        ##On va donner results_dict au llm pour qu'il génère une réponse
         dict_to_string = json.dumps(results_dict, ensure_ascii=False)
         print(f"\n\nDict to string : {dict_to_string}\n\n")
 
         ##appel llm le retour est un json au format demandé
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
-        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur)}\n")
+        fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
+
         #Appeler la BDD pour stocker le résultat
         print(self.bdd_service._get_connection())
         
         #stocker la fiche secteur dans la BDD
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
 
+        return fiche_secteur_json
+
     def process_solution(self, file):
-        filename = "solution_"
+        filename = file.filename
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -130,25 +133,23 @@ class rag_service():
         print(f"\n\nDict to string : {dict_to_string}\n\n")
 
         ##appel llm le retour est un json au format demandé
-        mistral_request_secteur = self.llm_service.mistral_request_solution(dict_to_string)
-        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur)}\n")
+        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
+        fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
+
         #Appeler la BDD pour stocker le résultat
         print(self.bdd_service._get_connection())
         
         #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_secteur)
+        self.bdd_service.insert_new_fiche(mistral_request_solution)
+
+        return fiche_solution_json
+
 
 if __name__ == "__main__":
     #test simulé comme utilisé avec l'api
     rag_service_instance = rag_service()
-     
-    # Lire le PDF en bytes (comme l'API le reçoit)
-    import os
-    base_path = os.path.dirname(__file__)
-    pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
-    
-    with open(pdf_path, 'rb') as f:
-        pdf_bytes = f.read()  # Lire tout le contenu en bytes
-    
-    # Passer les bytes à process
-    rag_service_instance.process_solution(pdf_bytes)
+    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
+        mock_pdf = UploadFile(file=f, filename="a.pdf")
+        rag_service_instance.process_sector(mock_pdf)
+
+

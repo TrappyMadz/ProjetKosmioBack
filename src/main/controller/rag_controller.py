@@ -53,7 +53,7 @@ async def process_solution(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
-        result = rag_service_instance.process_solution(pdf.file)
+        result = rag_service_instance.process_solution(pdf)
         return result
     except Exception as e:
         raise HTTPException(
@@ -78,7 +78,7 @@ async def process_sector(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
-        result = rag_service_instance.process_sector(pdf.file)
+        result = rag_service_instance.process_sector(pdf)
         return result
     except Exception as e:
         raise HTTPException(
