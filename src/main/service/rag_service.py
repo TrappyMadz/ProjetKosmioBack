@@ -43,6 +43,7 @@ class rag_service():
     
     def process_sector(self, file):    
 <<<<<<< HEAD
+<<<<<<< HEAD
         filename = file.filename
 <<<<<<< HEAD
         logger.info(f"Traitement du secteur - fichier: {filename}")
@@ -50,6 +51,9 @@ class rag_service():
 =======
         filename = "sector"
 >>>>>>> 94c3f28 (fix : filename gestion temporary fix)
+=======
+        filename = file.filename
+>>>>>>> e3fdd52 (fix : APIs available)
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -122,16 +126,27 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
+<<<<<<< HEAD
         id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
         self.bdd_service.add_qualimetrie(id, mistral_request_secteur["qualimetrie"])
         fiche_secteur_json = json.dumps(mistral_request_secteur["data"], ensure_ascii=False)
 
+=======
+        fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
+
+        #Appeler la BDD pour stocker le résultat
+        print(self.bdd_service._get_connection())
+        
+>>>>>>> e3fdd52 (fix : APIs available)
         #stocker la fiche secteur dans la BDD
         logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
 
         return fiche_secteur_json
 
+        return fiche_secteur_json
+
     def process_solution(self, file):
+<<<<<<< HEAD
 <<<<<<< HEAD
         filename = file.filename
 <<<<<<< HEAD
@@ -142,6 +157,9 @@ class rag_service():
 =======
         filename = "solution_"
 >>>>>>> 94c3f28 (fix : filename gestion temporary fix)
+=======
+        filename = file.filename
+>>>>>>> e3fdd52 (fix : APIs available)
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -195,6 +213,7 @@ class rag_service():
         logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
+<<<<<<< HEAD
         logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
         id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
@@ -203,6 +222,16 @@ class rag_service():
 
         #stocker la fiche secteur dans la BDD
         logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
+=======
+        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
+        fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
+
+        #Appeler la BDD pour stocker le résultat
+        print(self.bdd_service._get_connection())
+        
+        #stocker la fiche secteur dans la BDD
+        self.bdd_service.insert_new_fiche(mistral_request_solution)
+>>>>>>> e3fdd52 (fix : APIs available)
 
         return fiche_solution_json
 
@@ -213,10 +242,15 @@ if __name__ == "__main__":
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
 <<<<<<< HEAD
+<<<<<<< HEAD
         rag_service_instance.process_sector(mock_pdf)
 
 =======
         rag_service_instance.process_solution(mock_pdf)
 >>>>>>> 4e8eea9 (feat : api available)
 
+=======
+        rag_service_instance.process_sector(mock_pdf)
+
+>>>>>>> e3fdd52 (fix : APIs available)
 

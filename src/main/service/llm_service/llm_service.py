@@ -2,6 +2,7 @@ import requests
 import json
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+<<<<<<< HEAD
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import service.llm_service.qualimetrie as qualimetrie 
 import math
@@ -9,6 +10,9 @@ from config.logging_config import get_logger
 
 # Logger pour ce module
 logger = get_logger("llm_service")
+=======
+
+>>>>>>> e3fdd52 (fix : APIs available)
 
 class LlmService():
     prompt_solution = """
@@ -130,22 +134,38 @@ class LlmService():
 
     def __init__(self, config):
         self.config = config
+<<<<<<< HEAD
     
     # Requete à mistral, retourne le json demandé par le prompt dans le payload
     def mistral_request(self,prompt,content):
         print("Envoi de la requête à Mistral avec le prompt :")
         print(prompt)
+=======
+
+    # requetes mistral
+
+
+    def mistral_request_solution(self, content):
+>>>>>>> e3fdd52 (fix : APIs available)
         url = self.config.url_model_llm
 
         payload = {
             "messages": [
+<<<<<<< HEAD
                 {"content": prompt, "role": "system"},
+=======
+                {"content": self.prompt_solution, "role": "system"},
+>>>>>>> e3fdd52 (fix : APIs available)
                 {"content": content, "role": "user"}
             ],
             "model": self.config.model_llm,
             "temperature": 0.1,
+<<<<<<< HEAD
             "response_format": {"type": "json_object"},
             "logprobs": True
+=======
+            "response_format": {"type": "json_object"}
+>>>>>>> e3fdd52 (fix : APIs available)
         }
         
         headers = {
@@ -164,6 +184,7 @@ class LlmService():
         )
         session.mount("https://", HTTPAdapter(max_retries=retries))
         session.mount("http://", HTTPAdapter(max_retries=retries))
+<<<<<<< HEAD
 
         try:
             # 2. Ajout d'un timeout (indispensable)
@@ -217,6 +238,200 @@ class LlmService():
         
     # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution
     def mistral_request_solution(self,content):
+=======
+
+        try:
+            # 2. Ajout d'un timeout (indispensable)
+            # (timeout_connexion, timeout_lecture)
+            # On laisse 150 secondes au modèle pour générer le JSON complet
+            response = session.post(
+                url, 
+                json=payload, 
+                headers=headers, 
+                verify=False, 
+                timeout=(20, 150) 
+            )
+
+            if response.status_code == 200:
+                response_data = response.json()
+                # Sécurisation de l'accès aux données
+                choices = response_data.get("choices", [])
+                if not choices:
+                    return {"error": "No choices in response"}
+
+                text = choices[0]["message"]["content"]
+
+                try:
+                    return json.loads(text)
+                except json.JSONDecodeError:
+                    print("Failed to parse JSON content, returning raw text.")
+                    return text
+            else:
+                print(f"Error {response.status_code}: {response.text}")
+                return None
+
+        except requests.exceptions.ChunkedEncodingError as e:
+            print(f"Connexion interrompue pendant la lecture du flux (IncompleteRead): {e}")
+            return {"error": "stream_interrupted", "details": str(e)}
+        except requests.exceptions.Timeout:
+            print("Le serveur Mistral a mis trop de temps à répondre (Timeout).")
+            return {"error": "timeout"}
+        except Exception as e:
+            print(f"Erreur inattendue : {e}")
+            return None
+
+
+    def mistral_request_secteur(self, content):
+        url = self.config.url_model_llm
+        payload = {
+            "messages": [
+                {"content": self.prompt_solution, "role": "system"},
+                {"content": content, "role": "user"}
+            ],
+            "model": self.config.model_llm,
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"}
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        # 1. Configuration d'une session avec auto-retry
+        # Cela permet de relancer la requête si la connexion est coupée brutalement
+        session = requests.Session()
+        retries = Retry(
+            total=3,                # Nombre de tentatives
+            backoff_factor=1,       # Attend 1s, 2s, 4s entre les essais
+            status_forcelist=[502, 503, 504], # Retente si le serveur est surchargé
+            raise_on_status=False
+        )
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+        session.mount("http://", HTTPAdapter(max_retries=retries))
+
+        try:
+            # 2. Ajout d'un timeout (indispensable)
+            # (timeout_connexion, timeout_lecture)
+            # On laisse 150 secondes au modèle pour générer le JSON complet
+            response = session.post(
+                url, 
+                json=payload, 
+                headers=headers, 
+                verify=False, 
+                timeout=(20, 150) 
+            )
+
+            if response.status_code == 200:
+                response_data = response.json()
+                # Sécurisation de l'accès aux données
+                choices = response_data.get("choices", [])
+                if not choices:
+                    return {"error": "No choices in response"}
+
+                text = choices[0]["message"]["content"]
+
+                try:
+                    return json.loads(text)
+                except json.JSONDecodeError:
+                    print("Failed to parse JSON content, returning raw text.")
+                    return text
+            else:
+                print(f"Error {response.status_code}: {response.text}")
+                return None
+
+        except requests.exceptions.ChunkedEncodingError as e:
+            print(f"Connexion interrompue pendant la lecture du flux (IncompleteRead): {e}")
+            return {"error": "stream_interrupted", "details": str(e)}
+        except requests.exceptions.Timeout:
+            print("Le serveur Mistral a mis trop de temps à répondre (Timeout).")
+            return {"error": "timeout"}
+        except Exception as e:
+            print(f"Erreur inattendue : {e}")
+            return None
+
+
+    def mistral_request_secteur(self, content):
+        url = self.config.url_model_llm
+        payload = {
+            "messages": [
+                {
+                    "content": self.prompt_secteur,
+                    "role": "system"
+                },
+                {
+                    "content": content,
+                    "role": "user"
+                }
+            ],
+            "model": self.config.model_llm,
+            "temperature": 0.1,
+            "response_format": {
+                "type": "json_object"
+            }
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.config.access_token}",
+        }
+
+        try:
+            # Ajout d'un timeout (10s pour se connecter, 150s pour recevoir la réponse)
+            # verify=False reste présent comme dans ton code initial
+            response = requests.post(
+                url, 
+                json=payload, 
+                headers=headers, 
+                verify=False, 
+                timeout=(20, 150) 
+            )
+
+            if response.status_code == 200:
+                response_data = response.json()
+                choices = response_data.get("choices", [])
+
+                for choice in choices:
+                    text = choice["message"]["content"]
+                    try:
+                        data = json.loads(text)
+                        print(data)
+                        return data
+                    except json.JSONDecodeError:
+                        print("Failed to parse JSON:", text)
+                        return text
+            else:
+                print("Error:", response.status_code, response.text)
+                return None
+
+        except requests.exceptions.ChunkedEncodingError as e:
+            # C'est ici que l'erreur 'IncompleteRead' est capturée
+            print(f"Erreur de flux (IncompleteRead) : la connexion a été coupée. Détails : {e}")
+            return None
+        except requests.exceptions.Timeout:
+            print("Erreur : Le délai d'attente a été dépassé (Timeout).")
+            return None
+        except Exception as e:
+            print(f"Erreur inattendue : {e}")
+            return None
+
+
+
+    def rag_nlp_completion(self, retrieved_sentences):
+        url = self.config.url_model_llm
+
+        messages = [
+            #preprompt
+            {"role": "system",
+             "content": (
+                    #préparer le preprompt en donnant les consignes ainsi que le modèle de sortie
+                )
+            },
+
+            {
+                "role": "user",
+                "content": f"""Informations fournies : {retrieved_sentences} \
+>>>>>>> e3fdd52 (fix : APIs available)
 
         ## Les prompts pour chaques parties
         prompt_title_metadata_summary = """
