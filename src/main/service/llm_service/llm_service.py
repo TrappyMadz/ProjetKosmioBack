@@ -336,10 +336,21 @@ class LlmService():
                         }
 
                 except json.JSONDecodeError:
-                    print("Failed to parse JSON:", text)
+                    print("Failed to parse JSON content, returning raw text.")
                     return text
-        else:
-            print("Error:", response.status_code)
+            else:
+                print(f"Error {response.status_code}: {response.text}")
+                return None
+
+        except requests.exceptions.ChunkedEncodingError as e:
+            print(f"Connexion interrompue pendant la lecture du flux (IncompleteRead): {e}")
+            return {"error": "stream_interrupted", "details": str(e)}
+        except requests.exceptions.Timeout:
+            print("Le serveur Mistral a mis trop de temps à répondre (Timeout).")
+            return {"error": "timeout"}
+        except Exception as e:
+            print(f"Erreur inattendue : {e}")
+            return None
 
 
     def qualsecteur(self, content):
@@ -347,8 +358,8 @@ class LlmService():
         payload = {
             "messages": [
                 {
-                    "content" : self.prompt_secteur,
-                    "role" : "system"
+                    "content": self.prompt_secteur,
+                    "role": "system"
                 },
                 {
                     "content": content,
@@ -358,8 +369,8 @@ class LlmService():
             "model": self.config.model_llm,
             "temperature": 0.1,
             "response_format": {
-                "type": "json_object"},
-            "logprobs": True,
+                "type": "json_object"
+            }
         }
 
         headers = {
@@ -367,47 +378,47 @@ class LlmService():
             "Authorization": f"Bearer {self.config.access_token}",
         }
 
-        response = requests.post(url, json=payload, headers=headers, verify=False)
-        if response.status_code == 200:
-            # Handle response
-            response_data = response.json()
-            # Parse JSON response
-            choices = response_data["choices"]
-            for choice in choices:
-                text = choice["message"]["content"]
+        try:
+            # Ajout d'un timeout (10s pour se connecter, 150s pour recevoir la réponse)
+            # verify=False reste présent comme dans ton code initial
+            response = requests.post(
+                url, 
+                json=payload, 
+                headers=headers, 
+                verify=False, 
+                timeout=(20, 150) 
+            )
 
-                # récupérer les logprobs pour calculer la confiance de l'ia sur sa réponse
-                logprobs = choice.get("logprobs").get("content")
-                print("LOGPROBS :", logprobs)
+            if response.status_code == 200:
+                response_data = response.json()
+                choices = response_data.get("choices", [])
 
-                # Process text and finish_reason
-                try:
-                    data = json.loads(text)
-                    
-                    print(data)
+                for choice in choices:
+                    text = choice["message"]["content"]
+                    try:
+                        data = json.loads(text)
+                        print(data)
+                        return data
+                    except json.JSONDecodeError:
+                        print("Failed to parse JSON:", text)
+                        return text
+            else:
+                print("Error:", response.status_code, response.text)
+                return None
 
-                    tauxCompletion = qualimetrie.taux_remplissage(data)
-                    print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
+        except requests.exceptions.ChunkedEncodingError as e:
+            # C'est ici que l'erreur 'IncompleteRead' est capturée
+            print(f"Erreur de flux (IncompleteRead) : la connexion a été coupée. Détails : {e}")
+            return None
+        except requests.exceptions.Timeout:
+            print("Erreur : Le délai d'attente a été dépassé (Timeout).")
+            return None
+        except Exception as e:
+            print(f"Erreur inattendue : {e}")
+            return None
 
-                    # Calcul
-                    resultat = qualimetrie.confiance_global(logprobs)
-                    print(f"RESULTATS CONFIANCE : {resultat}")
-                    bon_remplissage = qualimetrie.json_bien_constitue(data)
-                    print(f"Champs en trop : {bon_remplissage[0]}")
-                    print(f"Champs en moins : {bon_remplissage[1]}")
-                    return  {
-                            "data": data,
-                            "completion": tauxCompletion,
-                            "confiance": resultat
-                        }
 
-                except json.JSONDecodeError:
-                    print("Failed to parse JSON:", text)
-                    return text
-        else:
-            print("Error:", response.status_code)
 
-    #TODO
     def rag_nlp_completion(self, retrieved_sentences):
         url = self.config.url_model_llm
 
