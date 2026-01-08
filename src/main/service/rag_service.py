@@ -141,8 +141,14 @@ class rag_service():
 if __name__ == "__main__":
     #test simulé comme utilisé avec l'api
     rag_service_instance = rag_service()
-    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
-        mock_pdf = UploadFile(file=f, filename="a.pdf")
-        rag_service_instance.process_solution(mock_pdf)
-
-
+     
+    # Lire le PDF en bytes (comme l'API le reçoit)
+    import os
+    base_path = os.path.dirname(__file__)
+    pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
+    
+    with open(pdf_path, 'rb') as f:
+        pdf_bytes = f.read()  # Lire tout le contenu en bytes
+    
+    # Passer les bytes à process
+    rag_service_instance.process_solution(pdf_bytes)
