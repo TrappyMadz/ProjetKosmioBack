@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from service.rag_service import rag_service
 from dotenv import load_dotenv
 import os
+import json
 
 # Initialisation de l'application FastAPI
 load_dotenv() 
@@ -54,7 +55,7 @@ async def process_solution(pdf: UploadFile = File(...)):
     try:
         # Traitement du fichier
         result = rag_service_instance.process_solution(pdf)
-        return result
+        return json.loads(result)
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -79,7 +80,7 @@ async def process_sector(pdf: UploadFile = File(...)):
     try:
         # Traitement du fichier
         result = rag_service_instance.process_sector(pdf)
-        return result
+        return json.loads(result)
     except Exception as e:
         raise HTTPException(
             status_code=500,
