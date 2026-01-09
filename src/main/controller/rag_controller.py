@@ -86,5 +86,26 @@ async def process_sector(pdf: UploadFile = File(...)):
             detail=f"Erreur lors du traitement du fichier: {str(e)}"
         )
 
+@rag_app.get("/v1/get/{id}/history")
+def get_fiche_history(id: int):
+    """
+    Renvoie la liste des anciennes version d'une fiche demandée. 
+    Renvoie une erreur 404 si la fiche n'existe pas ou qu'elle n'a pas "d'ancienne version" (aucune modifications ?).
+    """
+    try:
+        history = rag_service_instance.bdd_service.get_one_fiche_history(id)
+        if history is None:
+            raise HTTPException(
+                status_code=404,
+                detail="La fiche n'existe pas ou n'a jamais été modifiée (et n'a donc aucune ancienne version)"
+            )
+        return history
+    except Exception as e:
+        print(f"Erreur serveur : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur serveur"
+        )
+
 # Pour lancer l'application :
 # uvicorn main:rag_app --reload

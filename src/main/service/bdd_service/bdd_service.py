@@ -87,8 +87,42 @@ class PostgresService:
             return -1
         finally:
             connection.close() 
+    
+    # ---Fonction READALLARCHIVED---
+    def get_all_fiche_history(self):
+        """
+        Récupère toutes les fiches contenus dans les archives. Retourne un tableau contenant toutes les fiches et raise une exception si la connexion ou la requête échoue.
+        """
+        connection = self._get_connection()
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json_history;")
+                return cursor.fetchall()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture des fiches : {exception}")
+            raise exception
+        finally:
+            connection.close() 
 
-        # --Fonction FULLUPDATE---
+    #---Fonction READONEARCHIVED---
+    def get_one_fiche_history(self, id):
+        """
+        Récupère l'historique des modifs de la fiche d'id "id". Retourne un tableau contenant les fiches, None si la fiche n'existe pas, et raise une exception si la connection ou la lecture échoue
+        """
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM fiche_en_json_history WHERE fiche_id = %s;", (id, ))
+                return cursor.fetchall()
+        except Exception as exception:
+            print(f"Erreur lor de la lecture de la fiche {id} : {exception}")
+            return -1
+        finally:
+            connection.close() 
+    
+
+    # ---Fonction FULLUPDATE---
     def update_fiche(self, id, data):
         """
         Met à jour une fiche existante. Cette fonction remplace TOUTES les données.
