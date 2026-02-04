@@ -10,8 +10,11 @@ from service.embedding_service.embedding_service import EmbeddingService
 import json
 from model.config import Config
 from constant import rag_constant
-import json
 from fastapi import UploadFile
+from config.logging_config import get_logger
+
+# Logger pour ce module
+logger = get_logger("rag_service")
 
 
 def load_file(file):
@@ -30,10 +33,13 @@ class rag_service():
         self.database_vect_service = DatabaseVectService(self.config) 
         self.llm_service = LlmService(self.config)
         self.bdd_service = PostgresService()
+        logger.info("RAG Service initialisé avec succès")
 
     
     def process_sector(self, file):    
         filename = file.filename
+        logger.info(f"Traitement du secteur - fichier: {filename}")
+        
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -41,20 +47,30 @@ class rag_service():
 
         ##On extrait la donnée du pdf
         extract = document_to_load.extract_data()
+        logger.debug("Extraction des données PDF terminée")
         
         ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
         proceed = document_to_load.proceed_data(extract)
         ## chunk media
         document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
-        print(f"document chunked :{document_chunked}\n")
+        logger.debug(f"Document découpé en {len(document_chunked)} chunks")
+        
         # embed media
-        document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
+        document_embedded = self.embedding_service.embedding_bge_multilingual_batch(document_chunked)
+
+        # Filtrer les chunks dont l'embedding a échoué (None)
+        valid_pairs = [(chunk, emb) for chunk, emb in zip(document_chunked, document_embedded) if emb is not None]
+        if len(valid_pairs) < len(document_chunked):
+            logger.warning(f"{len(document_chunked) - len(valid_pairs)} embeddings ont échoué et seront exclus")
+        document_chunked_filtered = [pair[0] for pair in valid_pairs]
+        document_embedded_filtered = [pair[1] for pair in valid_pairs]
 
         ## store in db vect
-        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+        self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
+        logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
 
         #embedding question
-        embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SECTOR_QUERIES)
+        embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES)
 
         ## retrieve from db vect
         results_dict = {}
@@ -74,22 +90,23 @@ class rag_service():
         
         ##On va donner results_dict au llm pour qu'il génère une réponse
         dict_to_string = json.dumps(results_dict, ensure_ascii=False)
-        print(f"\n\nDict to string : {dict_to_string}\n\n")
+        logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
+        logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
         fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
 
-        #Appeler la BDD pour stocker le résultat
-        print(self.bdd_service._get_connection())
-        
         #stocker la fiche secteur dans la BDD
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
+        logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
 
         return fiche_secteur_json
 
     def process_solution(self, file):
         filename = file.filename
+        logger.info(f"Traitement de la solution - fichier: {filename}")
+        
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -97,20 +114,30 @@ class rag_service():
 
         #On extrait la donnée du pdf
         extract = document_to_load.extract_data()
+        logger.debug("Extraction des données PDF terminée")
         
         #Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
         proceed = document_to_load.proceed_data(extract)
         # chunk media
         document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
-        print(f"document chunked :{document_chunked}\n")
+        logger.debug(f"Document découpé en {len(document_chunked)} chunks")
+        
         # embed media
-        document_embedded = self.embedding_service.embedding_bge_multilingual(document_chunked)
+        document_embedded = self.embedding_service.embedding_bge_multilingual_batch(document_chunked)
+
+        # Filtrer les chunks dont l'embedding a échoué (None)
+        valid_pairs = [(chunk, emb) for chunk, emb in zip(document_chunked, document_embedded) if emb is not None]
+        if len(valid_pairs) < len(document_chunked):
+            logger.warning(f"{len(document_chunked) - len(valid_pairs)} embeddings ont échoué et seront exclus")
+        document_chunked_filtered = [pair[0] for pair in valid_pairs]
+        document_embedded_filtered = [pair[1] for pair in valid_pairs]
 
         ## store in db vect
-        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
+        self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
+        logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
 
         #embedding question
-        embedded_fields = self.embedding_service.embedding_bge_multilingual_batch(rag_constant.SOLUTION_QUERIES)
+        embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SOLUTION_QUERIES)
 
         ## retrieve from db vect
         results_dict = {}
@@ -130,17 +157,16 @@ class rag_service():
         
         ###On va donner results_dict au llm pour qu'il génère une réponse
         dict_to_string = json.dumps(results_dict, ensure_ascii=False)
-        print(f"\n\nDict to string : {dict_to_string}\n\n")
+        logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
+        logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
         fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
 
-        #Appeler la BDD pour stocker le résultat
-        print(self.bdd_service._get_connection())
-        
         #stocker la fiche secteur dans la BDD
         self.bdd_service.insert_new_fiche(mistral_request_solution)
+        logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
 
         return fiche_solution_json
 
@@ -151,5 +177,6 @@ if __name__ == "__main__":
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
         rag_service_instance.process_sector(mock_pdf)
+
 
 

@@ -5,6 +5,10 @@ from requests.adapters import HTTPAdapter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import service.llm_service.qualimetrie as qualimetrie 
 import math
+from config.logging_config import get_logger
+
+# Logger pour ce module
+logger = get_logger("llm_service")
 
 class LlmService():
     prompt_solution = """
@@ -558,20 +562,20 @@ class LlmService():
                 try:
                     return json.loads(text)
                 except json.JSONDecodeError:
-                    print("Failed to parse JSON content, returning raw text.")
+                    logger.warning("Impossible de parser le JSON, retour du texte brut")
                     return text
             else:
-                print(f"Error {response.status_code}: {response.text}")
+                logger.error(f"Erreur LLM {response.status_code}: {response.text[:200]}")
                 return None
 
         except requests.exceptions.ChunkedEncodingError as e:
-            print(f"Connexion interrompue pendant la lecture du flux (IncompleteRead): {e}")
+            logger.error(f"Connexion interrompue pendant la lecture du flux: {e}")
             return {"error": "stream_interrupted", "details": str(e)}
         except requests.exceptions.Timeout:
-            print("Le serveur Mistral a mis trop de temps à répondre (Timeout).")
+            logger.error("Timeout: le serveur Mistral n'a pas répondu dans les délais")
             return {"error": "timeout"}
         except Exception as e:
-            print(f"Erreur inattendue : {e}")
+            logger.error(f"Erreur inattendue lors de l'appel LLM: {e}")
             return None
 
 

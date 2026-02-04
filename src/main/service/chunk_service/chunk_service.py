@@ -1,4 +1,8 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from config.logging_config import get_logger
+
+# Logger pour ce module
+logger = get_logger("chunk_service")
 
 
 class ChunkService():
@@ -7,7 +11,7 @@ class ChunkService():
 
       def chunk(self, pages, size, overlap):
             # Split text in chunk
-            print("try to split file...")
+            logger.debug("Début du découpage du document...")
             splitter = RecursiveCharacterTextSplitter(chunk_size=size,
                                                       chunk_overlap=overlap,
                                                       separators=["\n\n", "\n", " "])
@@ -17,8 +21,7 @@ class ChunkService():
             else:
                   # Pour les documents
                   splitted_chunks = splitter.split_documents(pages)
-            print("OK, Number of chunks : " + str(len(splitted_chunks)))
-            print(f"Result of chunking : {splitted_chunks}")
+            logger.info(f"Document découpé avec succès: {len(splitted_chunks)} chunks créés")
             return splitted_chunks
 
 
