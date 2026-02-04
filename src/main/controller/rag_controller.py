@@ -4,8 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from service.rag_service import rag_service
 from dotenv import load_dotenv
 from model.fiche_data import Fiche
+from config.logging_config import get_logger
 import os
 import json
+
+# Logger pour ce module
+logger = get_logger(__name__)
 
 # Initialisation de l'application FastAPI
 load_dotenv() 
@@ -55,9 +59,12 @@ async def process_solution(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
+        logger.info(f"Traitement d'une solution - fichier: {pdf.filename}")
         result = rag_service_instance.process_solution(pdf)
+        logger.info(f"Solution traitée avec succès - fichier: {pdf.filename}")
         return json.loads(result)
     except Exception as e:
+        logger.error(f"Erreur lors du traitement de la solution {pdf.filename}: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors du traitement du fichier: {str(e)}"
@@ -80,9 +87,12 @@ async def process_sector(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
+        logger.info(f"Traitement d'un secteur - fichier: {pdf.filename}")
         result = rag_service_instance.process_sector(pdf)
+        logger.info(f"Secteur traité avec succès - fichier: {pdf.filename}")
         return json.loads(result)
     except Exception as e:
+        logger.error(f"Erreur lors du traitement du secteur {pdf.filename}: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors du traitement du fichier: {str(e)}"
@@ -105,7 +115,7 @@ def get_fiche_history(id: int):
     except HTTPException as http_err:
         raise http_err
     except Exception as e:
-        print(f"Erreur serveur : {e}")
+        logger.error(f"Erreur serveur lors de la récupération de l'historique de la fiche {id}: {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur serveur"
@@ -120,13 +130,16 @@ async def update_fiche(id: int, data: Fiche):
     Renvoie un objet json contenant un message de confirmation et l'id de la fiche mise à jour en cas de succès.
     """
     try:
+        logger.info(f"Mise à jour de la fiche {id}")
         updated_id = rag_service_instance.bdd_service.update_fiche(id, data.model_dump())
 
         if updated_id is None:
+            logger.warning(f"Mise à jour impossible: fiche {id} introuvable")
             raise HTTPException(
                 status_code=404,
                 detail=f"Mise à jour impossible : la fiche {id} n'existe pas."
             )
+        logger.info(f"Fiche {id} mise à jour avec succès")
         return {
             "message": f"Fiche {id} mise à jour avec succès",
             "id": updated_id
@@ -135,7 +148,7 @@ async def update_fiche(id: int, data: Fiche):
         # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
         raise http_err
     except Exception as e:
-        print(f"Erreur serveur lors de l'update : {e}")
+        logger.error(f"Erreur serveur lors de l'update de la fiche {id}: {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur interne du serveur lors de la mise à jour"
@@ -158,7 +171,7 @@ async def get_all_fiche_solution():
         # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
         raise http_err
     except Exception as e:
-        print(f"Erreur : {e}")
+        logger.error(f"Erreur lors de la récupération des solutions: {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur interne du serveur"
@@ -181,7 +194,7 @@ async def get_all_fiche_sector():
         # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
         raise http_err
     except Exception as e:
-        print(f"Erreur : {e}")
+        logger.error(f"Erreur lors de la récupération des secteurs: {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur interne du serveur"
@@ -204,7 +217,7 @@ async def get_fiche_by_id(id: int):
         # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
         raise http_err
     except Exception as e:
-        print(f"Erreur : {e}")
+        logger.error(f"Erreur lors de la récupération de la fiche {id}: {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur interne du serveur"
