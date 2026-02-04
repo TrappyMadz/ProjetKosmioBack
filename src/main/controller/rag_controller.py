@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from service.rag_service import rag_service
 from dotenv import load_dotenv
+from model.fiche_data import Fiche
 import os
 import json
 
@@ -101,12 +102,118 @@ def get_fiche_history(id: int):
                 detail="La fiche n'existe pas ou n'a jamais été modifiée (et n'a donc aucune ancienne version)"
             )
         return history
+    except HTTPException as http_err:
+        raise http_err
     except Exception as e:
         print(f"Erreur serveur : {e}")
         raise HTTPException(
             status_code=500,
             detail="Erreur serveur"
         )
+
+@rag_app.put("/v1/update/{id}")
+async def update_fiche(id: int, data: Fiche):
+    """
+    Met à jour la fiche avec les nouvelles informations. Il faut absolument renvoyer TOUTES les infos, même celles qui ne changent pas,
+    car l'ancienne fiche est écrasée (elle se retrouvera dans la base d'archives).
+    Renvoie une erreur 404 si la fiche n'existe pas, et une 500 si une autre erreur surviens. 
+    Renvoie un objet json contenant un message de confirmation et l'id de la fiche mise à jour en cas de succès.
+    """
+    try:
+        updated_id = rag_service_instance.bdd_service.update_fiche(id, data.model_dump())
+
+        if updated_id is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Mise à jour impossible : la fiche {id} n'existe pas."
+            )
+        return {
+            "message": f"Fiche {id} mise à jour avec succès",
+            "id": updated_id
+        }
+    except HTTPException as http_err:
+        # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
+        raise http_err
+    except Exception as e:
+        print(f"Erreur serveur lors de l'update : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne du serveur lors de la mise à jour"
+        )
+
+@rag_app.get("/v1/get/solution")
+async def get_all_fiche_solution():
+    """
+    Renvoie la liste des fiches de type solution dans leur dernière version
+    """
+    try:
+        fiches = rag_service_instance.bdd_service.get_all_solutions()
+        if fiches is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Aucune fiche trouvée !"
+            )
+        return fiches
+    except HTTPException as http_err:
+        # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
+        raise http_err
+    except Exception as e:
+        print(f"Erreur : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne du serveur"
+        )
+
+@rag_app.get("/v1/get/sector")
+async def get_all_fiche_sector():
+    """
+    Renvoie la liste des fiches de type secteur dans leur dernière version
+    """
+    try:
+        fiches = rag_service_instance.bdd_service.get_all_sectors()
+        if fiches is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Aucune fiche trouvée !"
+            )
+        return fiches
+    except HTTPException as http_err:
+        # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
+        raise http_err
+    except Exception as e:
+        print(f"Erreur : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne du serveur"
+        )
+
+@rag_app.get("/v1/get/{id}")
+async def get_fiche_by_id(id: int):
+    """
+    Renvoie la fiche d'id id ou 404 si la fiche n'existe pas
+    """
+    try:
+        fiche = rag_service_instance.bdd_service.get_fiche_by_id(id)
+        if fiche is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"La fiche {id} n'existe pas."
+            )
+        return fiche
+    except HTTPException as http_err:
+        # On relaisse passer l'erreur 404 qu'on a levée juste au-dessus
+        raise http_err
+    except Exception as e:
+        print(f"Erreur : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne du serveur"
+        )
+
+
+
+
+
 
 # Pour lancer l'application :
 # uvicorn main:rag_app --reload
