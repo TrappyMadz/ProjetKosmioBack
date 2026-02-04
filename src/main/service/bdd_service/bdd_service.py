@@ -60,21 +60,37 @@ class PostgresService:
         finally:
             connection.close()
 
-    # ---Fonction READALL---
-    def get_all_fiches(self):
+    # ---Fonction READALL--- NE PAS UTILISER
+    def _get_all_fiches_by_type(self, fiche_type):
         """
-        Récupère toutes les fiches. Retourne un tableau contenant toutes les fiches et raise une exception si la connexion ou la requête échoue.
+        Récupère toutes les fiches. Retourne un tableau contenant toutes les fiches d'un certain type et raise une exception si la connexion ou la requête échoue.
         """
         connection = self._get_connection()
+        if not connection:
+            raise Exception("Impossible de se connecter à la bdd")
         try:
             with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT * FROM fiche_en_json;")
-                return cursor.fetchall()
+                cursor.execute("SELECT * FROM fiche_en_json WHERE type = %s;", (fiche_type,))
+                fiches = cursor.fetchall()
+                for fiche in fiches:
+                    for col in ['metadata', 'content', 'contribution', 'traceability']:
+                        if isinstance(fiche.get(col), str):
+                            fiche[col] = json.loads(fiche[col])
+                return fiches
         except Exception as exception:
             logger.error(f"Erreur lors de la lecture des fiches de type {fiche_type}: {exception}")
             raise exception
         finally:
             connection.close() 
+
+    # FONCTIONS READALL PAR TYPE -> UTILISER CELLES-CI 
+    def get_all_solutions(self):
+        """Récupère toutes les fiches de type solution."""
+        return self._get_all_fiches_by_type("solution")
+
+    def get_all_sectors(self):
+        """Récupère toutes les fiches de type secteur."""
+        return self._get_all_fiches_by_type("sector")
 
      # ---Fonction READONE---
     def get_fiche_by_id(self, id):
@@ -155,11 +171,18 @@ class PostgresService:
         Récupère l'historique des modifs de la fiche d'id "id". Retourne un tableau contenant les fiches, None si la fiche n'existe pas, et raise une exception si la connection ou la lecture échoue
         """
         connection = self._get_connection()
-        if not connection: return None
+        if not connection:
+            raise Exception("Impossible de se connecter à la bdd")
         try:
             with connection.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("SELECT * FROM fiche_en_json WHERE id = %s;", (id, ))
-                return cursor.fetchone()
+                fiche = cursor.fetchone()
+
+                if fiche:
+                    for col in ['metadata', 'content', 'contribution', 'traceability']:
+                        if isinstance(fiche.get(col), str):
+                            fiche[col] = json.loads(fiche[col])
+                return fiche
         except Exception as exception:
             logger.error(f"Erreur lors de la lecture de la fiche {id}: {exception}")
             return -1
