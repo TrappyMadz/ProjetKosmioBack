@@ -20,7 +20,7 @@ class PostgresService:
         try:
             return psycopg2.connect(self.db_url)
         except Exception as exception:
-            print(f"Erreur de connexion à la BDD : {exception}")
+            logger.error(f"Erreur de connexion à la BDD: {exception}")
             raise exception
 
     # ---Fonction CREATE---
@@ -51,7 +51,7 @@ class PostgresService:
                 ))
                 new_id = cursor.fetchone()[0]
                 connection.commit()
-                print(f"Fiche créée avec ID : {new_id}")
+                logger.info(f"Fiche créée avec ID: {new_id}")
                 return new_id
         except Exception as exception:
             connection.rollback()
@@ -217,7 +217,7 @@ class PostgresService:
                 cursor.execute("SELECT * FROM fiche_en_json_history WHERE fiche_id = %s;", (id, ))
                 return cursor.fetchall()
         except Exception as exception:
-            print(f"Erreur lor de la lecture de la fiche {id} : {exception}")
+            logger.error(f"Erreur lors de la lecture de l'historique de la fiche {id}: {exception}")
             return -1
         finally:
             connection.close() 
@@ -259,10 +259,10 @@ class PostgresService:
 
                 # On vérifie que la mise à jour à fonctionnée (rowcount définie le nombre de lignes modifiées)
                 if cursor.rowcount > 0:
-                    print(f"Fiche {id} mise à jour avec succès.")
+                    logger.info(f"Fiche {id} mise à jour avec succès")
                     return id
                 else:
-                    print(f"Aucune fiche trouvée avec l'id {id}.")
+                    logger.warning(f"Aucune fiche trouvée avec l'id {id}")
                     return None
         except Exception as exception:
             connection.rollback()
@@ -283,10 +283,10 @@ class PostgresService:
                 cursor.execute(query, (id,))
                 connection.commit()
                 if cursor.rowcount > 0:
-                    print(f"Fiche {id} supprimée avec succès.")
+                    logger.info(f"Fiche {id} supprimée avec succès")
                     return id
                 else:
-                    print(f"Aucune fiche trouvée avec l'id {id}.")
+                    logger.warning(f"Aucune fiche trouvée avec l'id {id}")
                     return None
         except Exception as exception:
             connection.rollback()
