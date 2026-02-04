@@ -2,6 +2,10 @@ import os
 import chromadb
 from chromadb.config import Settings
 from dotenv import load_dotenv
+from config.logging_config import get_logger
+
+# Logger pour ce module
+logger = get_logger("database_vect_service")
 
 load_dotenv()
 
@@ -11,7 +15,7 @@ def get_chroma_client():
     port = os.getenv('CHROMA_PORT', '5435')      
     token = os.getenv('CHROMA_TOKEN')            
 
-    print(f"Connexion à ChromaDB sur {host}:{port}...")
+    logger.info(f"Connexion à ChromaDB sur {host}:{port}...")
 
     return chromadb.HttpClient(
         host=host,
