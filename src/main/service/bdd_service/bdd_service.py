@@ -158,16 +158,15 @@ class PostgresService:
         if not connection: return None
         try:
             with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT * FROM fiche_en_json_history WHERE fiche_id = %s;", (id, ))
-                return cursor.fetchall()
+                cursor.execute("SELECT * FROM fiche_en_json WHERE id = %s;", (id, ))
+                return cursor.fetchone()
         except Exception as exception:
-            print(f"Erreur lor de la lecture de la fiche {id} : {exception}")
+            logger.error(f"Erreur lors de la lecture de la fiche {id}: {exception}")
             return -1
         finally:
             connection.close() 
-    
 
-    # ---Fonction FULLUPDATE---
+        # --Fonction FULLUPDATE---
     def update_fiche(self, id, data):
         """
         Met à jour une fiche existante. Cette fonction remplace TOUTES les données.
