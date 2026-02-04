@@ -97,11 +97,9 @@ class rag_service():
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
         fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
 
-        #Appeler la BDD pour stocker le résultat
-        print(self.bdd_service._get_connection())
-        
         #stocker la fiche secteur dans la BDD
         self.bdd_service.insert_new_fiche(mistral_request_secteur)
+        logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
 
         return fiche_secteur_json
 
@@ -162,14 +160,13 @@ class rag_service():
         logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
+        logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
         fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
 
-        #Appeler la BDD pour stocker le résultat
-        print(self.bdd_service._get_connection())
-        
         #stocker la fiche secteur dans la BDD
         self.bdd_service.insert_new_fiche(mistral_request_solution)
+        logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
 
         return fiche_solution_json
 
@@ -180,5 +177,6 @@ if __name__ == "__main__":
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
         rag_service_instance.process_sector(mock_pdf)
+
 
 
