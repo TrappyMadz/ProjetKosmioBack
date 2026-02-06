@@ -79,12 +79,13 @@ class rag_service():
 
         ##appel llm le retour est un json au format demandé
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
-        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur)}\n")
+        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur['data'])}\n")
         #Appeler la BDD pour stocker le résultat
         print(self.bdd_service._get_connection())
         
         #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_secteur)
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["completion"], mistral_request_secteur["confiance"])
 
     def process_solution(self, file):
         ## on récupère le fichier pdf
@@ -135,12 +136,13 @@ class rag_service():
 
         ##appel llm le retour est un json au format demandé
         mistral_request_secteur = self.llm_service.mistral_request_solution(dict_to_string)
-        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur)}\n")
+        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur['data'])}\n")
         #Appeler la BDD pour stocker le résultat
         print(self.bdd_service._get_connection())
         
         #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_secteur)
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["completion"], mistral_request_secteur["confiance"])
 
 if __name__ == "__main__":
     rag_service_instance = rag_service()
@@ -155,3 +157,17 @@ if __name__ == "__main__":
     
     # Passer les bytes à process
     rag_service_instance.process_solution(pdf_bytes)
+
+rag_service_instance = rag_service()
+    
+# Lire le PDF en bytes (comme l'API le reçoit)
+import os
+base_path = os.path.dirname(__file__)
+pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
+
+with open(pdf_path, 'rb') as f:
+    pdf_bytes = f.read()  # Lire tout le contenu en bytes
+
+# Passer les bytes à process
+
+rag_service_instance.process_solution(pdf_bytes)

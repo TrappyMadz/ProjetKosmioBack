@@ -163,6 +163,45 @@ class PostgresService:
 
 
 
+    ###### Qualimetrie ######
+
+
+
+
+    def add_qualimetrie(self, id, completion, confiance_globale):
+        """
+        ajout qualimétrie
+        """
+        connection = self._get_connection()
+        try:
+            with connection.cursor() as cursor:
+                query = """
+                INSERT INTO qualimetrie_retour_llm
+                (id_retour, completion, confiance_globale)
+                VALUES (%s, %s, %s)
+                RETURNING id;
+                """
+                # On utilisera Json() pour convertir les dictionnaires python en Json
+                cursor.execute(query, (
+                    id,
+                    completion,
+                    confiance_globale
+                ))
+                new_id = cursor.fetchone()[0]
+                connection.commit()
+                print(f"Qualimétrie ajoutée avec ID : {new_id}")
+                return new_id
+        except Exception as exception:
+            connection.rollback()
+            print(f"Erreur lecture SQL : {exception}")
+            raise exception
+        finally:
+            connection.close()
+
+
+
+
+
 ## pour tester faire bdd_service.test() dans run.py
 def test():
     exemple = {
