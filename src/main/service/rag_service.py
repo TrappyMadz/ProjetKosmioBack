@@ -95,13 +95,13 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
-        fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
-
+        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur['data'])}\n")
+        #Appeler la BDD pour stocker le résultat
+        print(self.bdd_service._get_connection())
+        
         #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_secteur)
-        logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
-
-        return fiche_secteur_json
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["completion"], mistral_request_secteur["confiance"])
 
     def process_solution(self, file):
         filename = file.filename
@@ -160,23 +160,40 @@ class rag_service():
         logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
-        logger.info("Appel du LLM Mistral pour génération de la fiche solution")
-        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
-        fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
-
+        mistral_request_secteur = self.llm_service.mistral_request_solution(dict_to_string)
+        print(f"\n type mistral_request_secteur : {type(mistral_request_secteur['data'])}\n")
+        #Appeler la BDD pour stocker le résultat
+        print(self.bdd_service._get_connection())
+        
         #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_solution)
-        logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
-
-        return fiche_solution_json
-
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["completion"], mistral_request_secteur["confiance"])
 
 if __name__ == "__main__":
     #test simulé comme utilisé avec l'api
     rag_service_instance = rag_service()
-    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
-        mock_pdf = UploadFile(file=f, filename="a.pdf")
-        rag_service_instance.process_sector(mock_pdf)
+     
+    # Lire le PDF en bytes (comme l'API le reçoit)
+    import os
+    base_path = os.path.dirname(__file__)
+    pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
+    
+    with open(pdf_path, 'rb') as f:
+        pdf_bytes = f.read()  # Lire tout le contenu en bytes
+    
+    # Passer les bytes à process
+    rag_service_instance.process_solution(pdf_bytes)
 
+rag_service_instance = rag_service()
+    
+# Lire le PDF en bytes (comme l'API le reçoit)
+import os
+base_path = os.path.dirname(__file__)
+pdf_path = os.path.join(base_path, "ressources_pdf/a.pdf")
 
+with open(pdf_path, 'rb') as f:
+    pdf_bytes = f.read()  # Lire tout le contenu en bytes
 
+# Passer les bytes à process
+
+rag_service_instance.process_solution(pdf_bytes)

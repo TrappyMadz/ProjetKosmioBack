@@ -1,5 +1,4 @@
 import requests
-import numpy as np
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Semaphore

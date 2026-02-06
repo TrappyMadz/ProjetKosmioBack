@@ -3,7 +3,7 @@ import os
 import pytesseract
 import re
 from pdf2image import convert_from_path
-from typing import TypedDict, Optional, Any, Dict
+from typing import TypedDict, Optional
 from langchain_ollama import OllamaLLM
 from langgraph.graph import StateGraph, START, END
 from pypdf import PdfReader

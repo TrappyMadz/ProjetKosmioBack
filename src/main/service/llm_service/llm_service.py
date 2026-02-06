@@ -312,8 +312,8 @@ class LlmService():
                 text = choice["message"]["content"]
 
                 # récupérer les logprobs pour calculer la confiance de l'ia sur sa réponse
-                #logprobs = choice.get("logprobs").get("content")
-                #print("LOGPROBS :", logprobs)
+                logprobs = choice.get("logprobs").get("content")
+                print("LOGPROBS :", logprobs)
                 
                 try:
                     data = json.loads(text)
@@ -323,7 +323,17 @@ class LlmService():
                     tauxCompletion = qualimetrie.taux_remplissage(data)
                     print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
 
-                    return data
+                     # Calcul
+                    resultat = qualimetrie.confiance_global(logprobs)
+                    print(f"RESULTATS CONFIANCE : {resultat}")
+                    bon_remplissage = qualimetrie.json_bien_constitue(data)
+                    print(f"JSON BIEN CONSTITUE : {bon_remplissage}")
+                    return  {
+                            "data": data,
+                            "completion": tauxCompletion,
+                            "confiance": resultat
+                        }
+
                 except json.JSONDecodeError:
                     print("Failed to parse JSON:", text)
                     return text
@@ -366,8 +376,8 @@ class LlmService():
                 text = choice["message"]["content"]
 
                 # récupérer les logprobs pour calculer la confiance de l'ia sur sa réponse
-                #logprobs = choice.get("logprobs").get("content")
-                #print("LOGPROBS :", logprobs)
+                logprobs = choice.get("logprobs").get("content")
+                print("LOGPROBS :", logprobs)
 
                 # Process text and finish_reason
                 try:
@@ -378,7 +388,16 @@ class LlmService():
                     tauxCompletion = qualimetrie.taux_remplissage(data)
                     print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
 
-                    return data
+                    # Calcul
+                    resultat = qualimetrie.confiance_global(logprobs)
+                    print(f"RESULTATS CONFIANCE : {resultat}")
+                    bon_remplissage = qualimetrie.json_bien_constitue(data)
+                    print(f"JSON BIEN CONSTITUE : {bon_remplissage}")
+                    return  {
+                            "data": data,
+                            "completion": tauxCompletion,
+                            "confiance": resultat
+                        }
 
                 except json.JSONDecodeError:
                     print("Failed to parse JSON:", text)
