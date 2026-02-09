@@ -230,7 +230,7 @@ class PostgresService:
 
 
 
-    def add_qualimetrie(self, id, completion, confiance_globale):
+    def add_qualimetrie(self, id, qualimetrie):
         """
         ajout qualimétrie
         """
@@ -246,8 +246,8 @@ class PostgresService:
                 # On utilisera Json() pour convertir les dictionnaires python en Json
                 cursor.execute(query, (
                     id,
-                    completion,
-                    confiance_globale
+                    qualimetrie["completion"],
+                    qualimetrie["confiance"]
                 ))
                 new_id = cursor.fetchone()[0]
                 connection.commit()

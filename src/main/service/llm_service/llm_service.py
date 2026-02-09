@@ -187,14 +187,23 @@ class LlmService():
 
                 text = choices[0]["message"]["content"]
 
+                # Récupérer les logprobs si présents
+                logprobs = []
                 try:
-                    return json.loads(text)
+                    logprobs = choices[0].get("logprobs").get("content")
+                except Exception:
+                    logprobs = []
+
+                # Toujours retourner une structure standardisée
+                try:
+                    parsed = json.loads(text)
+                    return {"data": parsed, "text": text, "logprobs": logprobs}
                 except json.JSONDecodeError:
                     print("Failed to parse JSON content, returning raw text.")
-                    return text
+                    return {"data": None, "text": text, "logprobs": logprobs}
             else:
                 print(f"Error {response.status_code}: {response.text}")
-                return None
+                return {"data": None, "text": None, "logprobs": [], "error": f"HTTP {response.status_code}"}
 
         except requests.exceptions.ChunkedEncodingError as e:
             print(f"Connexion interrompue pendant la lecture du flux (IncompleteRead): {e}")
@@ -285,7 +294,9 @@ class LlmService():
         """
 
         # Lancement des 3 requêtes pour récupérer les json (exécution en parallèle)
+
         results = {}
+        logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
                 executor.submit(self.mistral_request, prompt_title_metadata_summary, content): "title_metadata_summary",
@@ -295,11 +306,24 @@ class LlmService():
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
                 try:
-                    results[key] = future.result()
+                    result = future.result()
+
+                    if isinstance(result, dict):
+                        # Agréger les logprobs s'ils existent
+                        logprobs = result.get("logprobs")
+                        if isinstance(logprobs, list) and logprobs:
+                            logprobs_t.extend(logprobs)
+                        
+                        try :
+                            results[key] = result.get("data")
+                        except Exception as e:
+                            results[key] = {"error": str(e)}
                 except Exception as e:
                     results[key] = {"error": str(e)}
-
+                
         # Validation et normalisation des fragments
+        print("ok")
+        print (f"Logprobs totaux : {logprobs_t}")
         def _safe_dict(res, name):
             if res is None:
                 print(f"Fragment {name} returned None, using empty dict")
@@ -358,8 +382,13 @@ class LlmService():
 
         print("JSON final généré :")
         print(json.dumps(final_json, indent=2, ensure_ascii=False))
-
-        return final_json
+        confiance = qualimetrie.confiance_global(logprobs_t)
+        print(f"Confiance globale calculée : {confiance:.4f}")
+        bonne_constitution = qualimetrie.json_bien_constitue(final_json)
+        
+        print(f"en trop : {bonne_constitution[0]}")
+        print(f"manquants : {bonne_constitution[1]}")
+        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": confiance}}
     
     # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution, avec gestion des erreurs de flux et d'execution
     def mistral_request_secteur(self,content):
@@ -646,42 +675,4 @@ class LlmService():
             return {"error": "timeout"}
         except Exception as e:
             print(f"Erreur inattendue : {e}")
-            return None
-
-        url = self.config.url_model_llm
-
-        messages = [
-            #preprompt
-            {"role": "system",
-             "content": (
-                    #préparer le preprompt en donnant les consignes ainsi que le modèle de sortie
-                )
-            },
-
-            {
-                "role": "user",
-                "content": f"""Informations fournies : {retrieved_sentences} \
-
-        """
-            }
-        ]
-
-        payload = {
-            "model": self.config.model_llm,
-            "temperature": 0,
-            "max_tokens": 2000,
-            "messages": messages
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.config.access_token}",
-        }
-
-        response = requests.post(url, json=payload, headers=headers, verify = False)
-        if response.status_code == 200:
-            response_data = response.json()
-            return response_data["choices"][0]["message"]["content"]
-        else:
-            print("Erreur:", response.status_code)
             return None

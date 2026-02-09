@@ -18,12 +18,6 @@ CREATE TABLE IF NOT EXISTS qualimetrie_retour_llm (
     confiance_globale FLOAT
 );
 
-ALTER TABLE qualimetrie_retour_llm
-ADD CONSTRAINT IF NOT EXISTS fk_qualimetrie_fiche
-FOREIGN KEY (id_retour)
-REFERENCES fiche_en_json(id)
-ON DELETE CASCADE;
-
 -- Création de la table contenant l'historique des versions. Si un fichier est supprimé dans la table principale, toutes ses verisons sont supprimés automatiquement.
 CREATE TABLE IF NOT EXISTS fiche_en_json_history (
     history_id SERIAL PRIMARY KEY,

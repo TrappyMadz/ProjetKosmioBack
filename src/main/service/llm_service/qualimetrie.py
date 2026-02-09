@@ -38,7 +38,7 @@ def taux_remplissage(json):
 # confiance : 
 
 def confiance_global(logprobs: list):
-    if not logprobs:
+    if not logprobs or not isinstance(logprobs, list) or len(logprobs) == 0:
         return 0.0
     avg_logprob = sum(t["logprob"] for t in logprobs) / len(logprobs)
     confiance = math.exp(avg_logprob)
@@ -103,43 +103,51 @@ def json_bien_constitue_solution(data):
 
         if "implementation_path" in champs_content:
             ip = data["content"]["implementation_path"]
+            champs_attendus_n3 = {"step", "details"}
             if isinstance(ip, list) and len(ip) > 0:
                 try : 
-                    champs_attendus_n3 = {"step", "details"}
                     res_entrop.append("content.implementation_path :" + str(set(ip[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.implementation_path :" + str(champs_attendus_n3.difference(set(ip[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.implementation_path :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.implementation_path (liste vide) :" + str(champs_attendus_n3))
 
         if "risks" in champs_content:
             risks = data["content"]["risks"]
+            champs_attendus_n3 = {"risk"}
             if isinstance(risks, list) and len(risks) > 0:
                 try :
-                    champs_attendus_n3 = {"risk"}
                     res_entrop.append("content.risks :" + str(set(risks[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.risks :" + str(champs_attendus_n3.difference(set(risks[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.risks :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.risks (liste vide) :" + str(champs_attendus_n3))
 
         if "examples" in champs_content:
             examples = data["content"]["examples"]
+            champs_attendus_n3 = {"title", "type", "link"}
             if isinstance(examples, list) and len(examples) > 0:
                 try :
-                    champs_attendus_n3 = {"title", "type", "link"}
                     res_entrop.append("content.examples :" + str(set(examples[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.examples :" + str(champs_attendus_n3.difference(set(examples[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.examples :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.examples (liste vide) :" + str(champs_attendus_n3))
 
         if "resources" in champs_content:
             resources = data["content"]["resources"]
+            champs_attendus_n3 = {"title", "type", "link"}
             if isinstance(resources, list) and len(resources) > 0:
                 try :
-                    champs_attendus_n3 = {"title", "type", "link"}
                     res_entrop.append("content.resources :" + str(set(resources[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.resources :" + str(champs_attendus_n3.difference(set(resources[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.resources :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.resources (liste vide) :" + str(champs_attendus_n3))
 
 
     if "contribution" in champs_json:
@@ -182,53 +190,64 @@ def json_bien_constitue_secteur(data):
 
         if "challenges" in champs_content:
             challenges = data["content"]["challenges"]
+            champs_attendus_n3 = {"title", "description"}
             if isinstance(challenges, list) and len(challenges) > 0:
                 try : 
-                    champs_attendus_n3 = {"title", "description"}
                     res_entrop.append("content.challenges :" + str(set(challenges[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.challenges :" + str(champs_attendus_n3.difference(set(challenges[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.challenges :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.challenges (liste vide) :" + str(champs_attendus_n3))
+            
 
         if "systems_matrix" in champs_content:
             systems = data["content"]["systems_matrix"]
+            champs_attendus_n3 = {"system", "impact", "priority", "solutions"}
             if isinstance(systems, list) and len(systems) > 0:
                 try :
-                    champs_attendus_n3 = {"system", "impact", "priority", "solutions"}
                     res_entrop.append("content.systems_matrix :" + str(set(systems[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.systems_matrix :" + str(champs_attendus_n3.difference(set(systems[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.systems_matrix :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.systems_matrix (liste vide) :" + str(champs_attendus_n3))
 
         if "sector_path" in champs_content:
             path = data["content"]["sector_path"]
+            champs_attendus_n3 = {"phase", "action"}
             if isinstance(path, list) and len(path) > 0:
                 try : 
-                    champs_attendus_n3 = {"phase", "action"}
                     res_entrop.append("content.sector_path :" + str(set(path[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.sector_path :" + str(champs_attendus_n3.difference(set(path[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.sector_path :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.sector_path (liste vide) :" + str(champs_attendus_n3))
 
         if "use_cases" in champs_content:
             use_cases = data["content"]["use_cases"]
+            champs_attendus_n3 = {"sub_sector", "actions", "results", "link"}
             if isinstance(use_cases, list) and len(use_cases) > 0:
                 try :
-                    champs_attendus_n3 = {"sub_sector", "actions", "results", "link"}
                     res_entrop.append("content.use_cases :" + str(set(use_cases[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.use_cases :" + str(champs_attendus_n3.difference(set(use_cases[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.use_cases :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.use_cases (liste vide) :" + str(champs_attendus_n3))
 
         if "resources" in champs_content:
             resources = data["content"]["resources"]
+            champs_attendus_n3 = {"title", "type", "link"}
             if isinstance(resources, list) and len(resources) > 0:
                 try :
-                    champs_attendus_n3 = {"title", "type", "link"}
                     res_entrop.append("content.resources :" + str(set(resources[0].keys()).difference(champs_attendus_n3)))
                     res_enmoins.append("content.resources :" + str(champs_attendus_n3.difference(set(resources[0].keys()))))
                 except Exception as e:
                     res_enmoins.append("content.resources :" + str(champs_attendus_n3))
+            else:
+                res_enmoins.append("content.resources (liste vide) :" + str(champs_attendus_n3))
 
     if "contribution" in champs_json:
         champs_attendus_n2 = {"completeness", "validator", "history", "improvement_proposal_link"}
