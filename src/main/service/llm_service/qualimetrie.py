@@ -44,3 +44,200 @@ def confiance_global(logprobs: list):
     confiance = math.exp(avg_logprob)
     return round(confiance, 3)
 
+
+### Json bien constitué : pas de champs manquant et pas de champs inventés
+
+def json_bien_constitue(json):
+    if json["type"].lower() == "solution":
+        return json_bien_constitue_solution(json)
+    elif json["type"].lower() == "secteur":
+        return json_bien_constitue_secteur(json)
+    else:
+        raise ValueError("Type de fiche inconnu. Le champ 'type' doit être soit 'solution' soit 'secteur'. Nous ne pouvons savoir si le json est bien constitué.")
+    
+def json_bien_constitue_solution(data):
+    champs_attendus_n1 = {"type", "id", "title", "metadata", "summary", "content", "contribution", "traceability"}
+    champs_json = set(data.keys())
+    res_entrop = []
+    res_enmoins = []
+    res_entrop.append("premier niveau du json :" + str(champs_json.difference(champs_attendus_n1)))
+    res_enmoins.append("premier niveau du json :" + str(champs_attendus_n1.difference(champs_json)))
+
+    if "metadata" in champs_json:
+        champs_attendus_n2 = {
+            "category", "system", "type", "maturity",
+            "cost_scale", "complexity", "last_update", "contributors"
+        }
+        champs_metadata = set(data["metadata"].keys())
+        res_entrop.append("metadata :" + str(champs_metadata.difference(champs_attendus_n2)))
+        res_enmoins.append("metadata :" + str(champs_attendus_n2.difference(champs_metadata)))
+
+    if "content" in champs_json:
+        champs_attendus_n2 = {
+            "context", "mechanism", "applicability", "impacts",
+            "levers", "implementation_path", "risks", "examples", "resources"
+        }
+        champs_content = set(data["content"].keys())
+        res_entrop.append("content :" + str(champs_content.difference(champs_attendus_n2)))
+        res_enmoins.append("content :" + str(champs_attendus_n2.difference(champs_content)))
+
+        if "context" in champs_content:
+            champs_attendus_n3 = {"objective", "scope_includes", "scope_excludes", "prerequisites"}
+            res_entrop.append("content.context :" + str(set(data["content"]["context"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.context :" + str(champs_attendus_n3.difference(set(data["content"]["context"].keys()))))
+
+        if "mechanism" in champs_content:
+            champs_attendus_n3 = {"description", "variants"}
+            res_entrop.append("content.mechanism :" + str(set(data["content"]["mechanism"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.mechanism :" + str(champs_attendus_n3.difference(set(data["content"]["mechanism"].keys()))))
+
+        if "applicability" in champs_content:
+            champs_attendus_n3 = {"conditions", "avoid_if"}
+            res_entrop.append("content.applicability :" + str(set(data["content"]["applicability"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.applicability :" + str(champs_attendus_n3.difference(set(data["content"]["applicability"].keys()))))
+
+        if "impacts" in champs_content:
+            champs_attendus_n3 = {"energy", "co2", "costs", "co_benefits"}
+            res_entrop.append("content.impacts :" + str(set(data["content"]["impacts"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.impacts :" + str(champs_attendus_n3.difference(set(data["content"]["impacts"].keys()))))
+
+        if "implementation_path" in champs_content:
+            ip = data["content"]["implementation_path"]
+            if isinstance(ip, list) and len(ip) > 0:
+                try : 
+                    champs_attendus_n3 = {"step", "details"}
+                    res_entrop.append("content.implementation_path :" + str(set(ip[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.implementation_path :" + str(champs_attendus_n3.difference(set(ip[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.implementation_path :" + str(champs_attendus_n3))
+
+        if "risks" in champs_content:
+            risks = data["content"]["risks"]
+            if isinstance(risks, list) and len(risks) > 0:
+                try :
+                    champs_attendus_n3 = {"risk"}
+                    res_entrop.append("content.risks :" + str(set(risks[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.risks :" + str(champs_attendus_n3.difference(set(risks[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.risks :" + str(champs_attendus_n3))
+
+        if "examples" in champs_content:
+            examples = data["content"]["examples"]
+            if isinstance(examples, list) and len(examples) > 0:
+                try :
+                    champs_attendus_n3 = {"title", "type", "link"}
+                    res_entrop.append("content.examples :" + str(set(examples[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.examples :" + str(champs_attendus_n3.difference(set(examples[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.examples :" + str(champs_attendus_n3))
+
+        if "resources" in champs_content:
+            resources = data["content"]["resources"]
+            if isinstance(resources, list) and len(resources) > 0:
+                try :
+                    champs_attendus_n3 = {"title", "type", "link"}
+                    res_entrop.append("content.resources :" + str(set(resources[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.resources :" + str(champs_attendus_n3.difference(set(resources[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.resources :" + str(champs_attendus_n3))
+
+
+    if "contribution" in champs_json:
+        champs_attendus_n2 = {"validation_level", "history", "improvement_proposal_link"}
+        res_entrop.append("contribution :" + str(set(data["contribution"].keys()).difference(champs_attendus_n2)))
+        res_enmoins.append("contribution :" + str(champs_attendus_n2.difference(set(data["contribution"].keys()))))
+
+    if "traceability" in champs_json:
+        champs_attendus_n2 = {"source_pdf", "extraction_confidence", "chunks_used"}
+        res_entrop.append("traceability :" + str(set(data["traceability"].keys()).difference(champs_attendus_n2)))
+        res_enmoins.append("traceability :" + str(champs_attendus_n2.difference(set(data["traceability"].keys()))))
+
+    return [res_entrop, res_enmoins]
+
+def json_bien_constitue_secteur(data):
+    champs_attendus_n1 = {"type", "id", "title", "metadata", "summary", "content", "contribution", "traceability"}
+    champs_json = set(data.keys())
+    res_entrop = []
+    res_enmoins = []
+    res_entrop.append("premier niveau du json :" + str(champs_json.difference(champs_attendus_n1)))
+    res_enmoins.append("premier niveau du json :" + str(champs_attendus_n1.difference(champs_json)))
+
+    if "metadata" in champs_json:
+        champs_attendus_n2 = {"sub_sectors", "company_size", "last_update", "contributors"}
+        res_entrop.append("metadata :" + str(set(data["metadata"].keys()).difference(champs_attendus_n2)))
+        res_enmoins.append("metadata :" + str(champs_attendus_n2.difference(set(data["metadata"].keys()))))
+
+    if "content" in champs_json:
+        champs_attendus_n2 = {
+            "emissions_profile", "challenges", "regulations",
+            "systems_matrix", "sector_path", "use_cases", "resources"
+        }
+        champs_content = set(data["content"].keys())
+        res_entrop.append("content :" + str(champs_content.difference(champs_attendus_n2)))
+        res_enmoins.append("content :" + str(champs_attendus_n2.difference(champs_content)))
+        if "emissions_profile" in champs_content:
+            champs_attendus_n3 = {"process", "utilities", "building", "transport", "waste"}
+            res_entrop.append("content.emissions_profile :" + str(set(data["content"]["emissions_profile"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.emissions_profile :" + str(champs_attendus_n3.difference(set(data["content"]["emissions_profile"].keys()))))
+
+        if "challenges" in champs_content:
+            challenges = data["content"]["challenges"]
+            if isinstance(challenges, list) and len(challenges) > 0:
+                try : 
+                    champs_attendus_n3 = {"title", "description"}
+                    res_entrop.append("content.challenges :" + str(set(challenges[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.challenges :" + str(champs_attendus_n3.difference(set(challenges[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.challenges :" + str(champs_attendus_n3))
+
+        if "systems_matrix" in champs_content:
+            systems = data["content"]["systems_matrix"]
+            if isinstance(systems, list) and len(systems) > 0:
+                try :
+                    champs_attendus_n3 = {"system", "impact", "priority", "solutions"}
+                    res_entrop.append("content.systems_matrix :" + str(set(systems[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.systems_matrix :" + str(champs_attendus_n3.difference(set(systems[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.systems_matrix :" + str(champs_attendus_n3))
+
+        if "sector_path" in champs_content:
+            path = data["content"]["sector_path"]
+            if isinstance(path, list) and len(path) > 0:
+                try : 
+                    champs_attendus_n3 = {"phase", "action"}
+                    res_entrop.append("content.sector_path :" + str(set(path[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.sector_path :" + str(champs_attendus_n3.difference(set(path[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.sector_path :" + str(champs_attendus_n3))
+
+        if "use_cases" in champs_content:
+            use_cases = data["content"]["use_cases"]
+            if isinstance(use_cases, list) and len(use_cases) > 0:
+                try :
+                    champs_attendus_n3 = {"sub_sector", "actions", "results", "link"}
+                    res_entrop.append("content.use_cases :" + str(set(use_cases[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.use_cases :" + str(champs_attendus_n3.difference(set(use_cases[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.use_cases :" + str(champs_attendus_n3))
+
+        if "resources" in champs_content:
+            resources = data["content"]["resources"]
+            if isinstance(resources, list) and len(resources) > 0:
+                try :
+                    champs_attendus_n3 = {"title", "type", "link"}
+                    res_entrop.append("content.resources :" + str(set(resources[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.resources :" + str(champs_attendus_n3.difference(set(resources[0].keys()))))
+                except Exception as e:
+                    res_enmoins.append("content.resources :" + str(champs_attendus_n3))
+
+    if "contribution" in champs_json:
+        champs_attendus_n2 = {"completeness", "validator", "history", "improvement_proposal_link"}
+        res_entrop.append("contribution :" + str(set(data["contribution"].keys()).difference(champs_attendus_n2)))
+        res_enmoins.append("contribution :" + str(champs_attendus_n2.difference(set(data["contribution"].keys()))))
+
+    if "traceability" in champs_json:
+        champs_attendus_n2 = {"source_pdf", "extraction_confidence", "chunks_used"}
+        res_entrop.append("traceability :" + str(set(data["traceability"].keys()).difference(champs_attendus_n2)))
+        res_enmoins.append("traceability :" + str(champs_attendus_n2.difference(set(data["traceability"].keys()))))
+
+    return [res_entrop, res_enmoins]

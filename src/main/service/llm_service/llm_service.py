@@ -327,7 +327,8 @@ class LlmService():
                     resultat = qualimetrie.confiance_global(logprobs)
                     print(f"RESULTATS CONFIANCE : {resultat}")
                     bon_remplissage = qualimetrie.json_bien_constitue(data)
-                    print(f"JSON BIEN CONSTITUE : {bon_remplissage}")
+                    print(f"Champs en trop : {bon_remplissage[0]}")
+                    print(f"Champs en moins : {bon_remplissage[1]}")
                     return  {
                             "data": data,
                             "completion": tauxCompletion,
@@ -392,7 +393,8 @@ class LlmService():
                     resultat = qualimetrie.confiance_global(logprobs)
                     print(f"RESULTATS CONFIANCE : {resultat}")
                     bon_remplissage = qualimetrie.json_bien_constitue(data)
-                    print(f"JSON BIEN CONSTITUE : {bon_remplissage}")
+                    print(f"Champs en trop : {bon_remplissage[0]}")
+                    print(f"Champs en moins : {bon_remplissage[1]}")
                     return  {
                             "data": data,
                             "completion": tauxCompletion,
