@@ -95,11 +95,16 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
+
+        # ajout en bdd
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["qualimetrie"])
+        mistral_request_secteur["data"]["id"] = id  # on ajoute l'id de la fiche créée à la réponse
+
         fiche_secteur_json = json.dumps(mistral_request_secteur["data"], ensure_ascii=False)
 
         #stocker la fiche secteur dans la BDD
-        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
-        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["qualimetrie"])
+        
         logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
 
         return fiche_secteur_json
@@ -163,11 +168,14 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
+        # ajout en bdd
+        id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_solution["qualimetrie"])
+        mistral_request_solution["data"]["id"] = id  # on ajoute l'id de la fiche créée à la réponse
         fiche_solution_json = json.dumps(mistral_request_solution["data"], ensure_ascii=False)
 
         #stocker la fiche secteur dans la BDD
-        id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
-        self.bdd_service.add_qualimetrie(id, mistral_request_solution["qualimetrie"])
+
         logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
 
         return fiche_solution_json
