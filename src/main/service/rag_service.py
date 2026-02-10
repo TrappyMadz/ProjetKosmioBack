@@ -10,24 +10,11 @@ from service.embedding_service.embedding_service import EmbeddingService
 import json
 from model.config import Config
 from constant import rag_constant
-<<<<<<< HEAD
-<<<<<<< HEAD
 from fastapi import UploadFile
 from config.logging_config import get_logger
 
 # Logger pour ce module
 logger = get_logger("rag_service")
-=======
-import json
-from fastapi import UploadFile
->>>>>>> 4e8eea9 (feat : api available)
-=======
-from fastapi import UploadFile
-from config.logging_config import get_logger
-
-# Logger pour ce module
-logger = get_logger("rag_service")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
 
 
 def load_file(file):
@@ -50,50 +37,22 @@ class rag_service():
 
     
     def process_sector(self, file):    
-<<<<<<< HEAD
-<<<<<<< HEAD
         filename = file.filename
-<<<<<<< HEAD
-<<<<<<< HEAD
         logger.info(f"Traitement du secteur - fichier: {filename}")
         
-=======
-        filename = "sector"
->>>>>>> 94c3f28 (fix : filename gestion temporary fix)
-=======
-        filename = file.filename
->>>>>>> e3fdd52 (fix : APIs available)
-=======
-        logger.info(f"Traitement du secteur - fichier: {filename}")
-        
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
         ## on crée une collection chroma
         collection = self.database_vect_service.get_or_create_collection(filename)
         
-=======
-        ## on crée une collection chroma
-        collection = self.database_vect_service.get_or_create_collection(filename)
-        
->>>>>>> 4e8eea9 (feat : api available)
         document_to_load = PdfService(file, self.config)
 
         ##On extrait la donnée du pdf
         extract = document_to_load.extract_data()
-<<<<<<< HEAD
-<<<<<<< HEAD
         logger.debug("Extraction des données PDF terminée")
-=======
->>>>>>> 4e8eea9 (feat : api available)
-=======
-        logger.debug("Extraction des données PDF terminée")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
         
         ##Contient une liste de ProcessData (page_content, metadata) les éléments de la liste correspondent aux pages du pdf
         proceed = document_to_load.proceed_data(extract)
         ## chunk media
         document_chunked = self.chunk_service.chunk(proceed, rag_constant.CHUNK_SIZE,rag_constant.OVERLAP)
-<<<<<<< HEAD
-<<<<<<< HEAD
         logger.debug(f"Document découpé en {len(document_chunked)} chunks")
         
         # embed media
@@ -109,30 +68,6 @@ class rag_service():
         ## store in db vect
         self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
         logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
-=======
-        print(f"document chunked :{document_chunked}\n")
-=======
-        logger.debug(f"Document découpé en {len(document_chunked)} chunks")
-        
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
-        # embed media
-        document_embedded = self.embedding_service.embedding_bge_multilingual_batch(document_chunked)
-
-        # Filtrer les chunks dont l'embedding a échoué (None)
-        valid_pairs = [(chunk, emb) for chunk, emb in zip(document_chunked, document_embedded) if emb is not None]
-        if len(valid_pairs) < len(document_chunked):
-            logger.warning(f"{len(document_chunked) - len(valid_pairs)} embeddings ont échoué et seront exclus")
-        document_chunked_filtered = [pair[0] for pair in valid_pairs]
-        document_embedded_filtered = [pair[1] for pair in valid_pairs]
-
-        ## store in db vect
-<<<<<<< HEAD
-        self.database_vect_service.collection_store_embedded_document(collection, document_chunked, document_embedded)
->>>>>>> 4e8eea9 (feat : api available)
-=======
-        self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
-        logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
 
         #embedding question
         embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES)
@@ -160,51 +95,19 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
-<<<<<<< HEAD
-        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
-        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["qualimetrie"])
         fiche_secteur_json = json.dumps(mistral_request_secteur["data"], ensure_ascii=False)
 
-=======
-        fiche_secteur_json = json.dumps(mistral_request_secteur, ensure_ascii=False)
-
-<<<<<<< HEAD
-        #Appeler la BDD pour stocker le résultat
-        print(self.bdd_service._get_connection())
-        
->>>>>>> e3fdd52 (fix : APIs available)
         #stocker la fiche secteur dans la BDD
+        id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_secteur["qualimetrie"])
         logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
-
-        return fiche_secteur_json
-=======
-        #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_secteur)
-        logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
 
         return fiche_secteur_json
 
     def process_solution(self, file):
-<<<<<<< HEAD
-<<<<<<< HEAD
         filename = file.filename
-<<<<<<< HEAD
-<<<<<<< HEAD
         logger.info(f"Traitement de la solution - fichier: {filename}")
         
-=======
->>>>>>> 4e8eea9 (feat : api available)
-=======
-        filename = "solution_"
->>>>>>> 94c3f28 (fix : filename gestion temporary fix)
-=======
-        filename = file.filename
->>>>>>> e3fdd52 (fix : APIs available)
-=======
-        logger.info(f"Traitement de la solution - fichier: {filename}")
-        
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
         ## on crée une collection chroma qui portera le nom du fichier
         collection = self.database_vect_service.get_or_create_collection(filename)
         
@@ -258,30 +161,14 @@ class rag_service():
         logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
 
         ##appel llm le retour est un json au format demandé
-<<<<<<< HEAD
-<<<<<<< HEAD
         logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
-        id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
-        self.bdd_service.add_qualimetrie(id, mistral_request_solution["qualimetrie"])
         fiche_solution_json = json.dumps(mistral_request_solution["data"], ensure_ascii=False)
 
         #stocker la fiche secteur dans la BDD
+        id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
+        self.bdd_service.add_qualimetrie(id, mistral_request_solution["qualimetrie"])
         logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
-=======
-=======
-        logger.info("Appel du LLM Mistral pour génération de la fiche solution")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
-        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
-        fiche_solution_json = json.dumps(mistral_request_solution, ensure_ascii=False)
-
-        #stocker la fiche secteur dans la BDD
-        self.bdd_service.insert_new_fiche(mistral_request_solution)
-<<<<<<< HEAD
->>>>>>> e3fdd52 (fix : APIs available)
-=======
-        logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
->>>>>>> c97dbf0 (feat : add batch embedding & logs)
 
         return fiche_solution_json
 
@@ -291,17 +178,6 @@ if __name__ == "__main__":
     rag_service_instance = rag_service()
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
-<<<<<<< HEAD
-<<<<<<< HEAD
         rag_service_instance.process_sector(mock_pdf)
-
-=======
-        rag_service_instance.process_solution(mock_pdf)
->>>>>>> 4e8eea9 (feat : api available)
-
-=======
-        rag_service_instance.process_sector(mock_pdf)
-
->>>>>>> e3fdd52 (fix : APIs available)
 
 

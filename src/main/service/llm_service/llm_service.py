@@ -460,6 +460,7 @@ class LlmService():
 
         # Lancement des 3 requêtes pour récupérer les json (exécution en parallèle)
         results = {}
+        logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
                 executor.submit(self.mistral_request, prompt_title_metadata_summary, content): "title_metadata_summary",
@@ -469,11 +470,24 @@ class LlmService():
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
                 try:
-                    results[key] = future.result()
+                    result = future.result()
+
+                    if isinstance(result, dict):
+                        # Agréger les logprobs s'ils existent
+                        logprobs = result.get("logprobs")
+                        if isinstance(logprobs, list) and logprobs:
+                            logprobs_t.extend(logprobs)
+                        
+                        try :
+                            results[key] = result.get("data")
+                        except Exception as e:
+                            results[key] = {"error": str(e)}
                 except Exception as e:
                     results[key] = {"error": str(e)}
 
         # Validation et normalisation des fragments
+        print("ok")
+        print (f"Logprobs totaux : {logprobs_t}")
         def _safe_dict(res, name):
             if res is None:
                 print(f"Fragment {name} returned None, using empty dict")
@@ -532,8 +546,14 @@ class LlmService():
 
         print("JSON final généré :")
         print(json.dumps(final_json, indent=2, ensure_ascii=False))
-
-        return final_json
+        confiance = qualimetrie.confiance_global(logprobs_t)
+        print(f"Confiance globale calculée : {confiance:.4f}")
+        bonne_constitution = qualimetrie.json_bien_constitue(final_json)
+        
+        print(f"en trop : {bonne_constitution[0]}")
+        print(f"manquants : {bonne_constitution[1]}")
+        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": confiance}}
+    
     
 ############# Fonctions obsolètes #############
 

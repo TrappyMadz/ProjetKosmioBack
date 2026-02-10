@@ -50,7 +50,7 @@ def confiance_global(logprobs: list):
 def json_bien_constitue(json):
     if json["type"].lower() == "solution":
         return json_bien_constitue_solution(json)
-    elif json["type"].lower() == "secteur":
+    elif json["type"].lower() == "sector":
         return json_bien_constitue_secteur(json)
     else:
         raise ValueError("Type de fiche inconnu. Le champ 'type' doit être soit 'solution' soit 'secteur'. Nous ne pouvons savoir si le json est bien constitué.")
