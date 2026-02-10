@@ -380,8 +380,8 @@ class LlmService():
             "chunks_used": []
         }
 
-        print("JSON final généré :")
-        print(json.dumps(final_json, indent=2, ensure_ascii=False))
+        #print("JSON final généré :")
+        #print(json.dumps(final_json, indent=2, ensure_ascii=False))
         confiance = qualimetrie.confiance_global(logprobs_t)
         print(f"Confiance globale calculée : {confiance:.4f}")
         bonne_constitution = qualimetrie.json_bien_constitue(final_json)
@@ -544,8 +544,8 @@ class LlmService():
             "chunks_used": []
         }
 
-        print("JSON final généré :")
-        print(json.dumps(final_json, indent=2, ensure_ascii=False))
+        #print("JSON final généré :")
+        #print(json.dumps(final_json, indent=2, ensure_ascii=False))
         confiance = qualimetrie.confiance_global(logprobs_t)
         print(f"Confiance globale calculée : {confiance:.4f}")
         bonne_constitution = qualimetrie.json_bien_constitue(final_json)

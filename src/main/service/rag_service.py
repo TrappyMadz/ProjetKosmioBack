@@ -74,19 +74,42 @@ class rag_service():
 
         ## retrieve from db vect
         results_dict = {}
+        all_sources = []
         for field, embedding in embedded_fields.items():
             results = collection.query(
                 query_embeddings=embedding,
                 n_results=3,
             )
-            # Extraction des documents uniquement
+            # Extraction des documents et métadonnées
             documents = results.get("documents", [])
+            metadatas = results.get("metadatas", [])
 
-            # documents = [[doc1, doc2, doc3]] → on aplati
+            # On intègre le file_name et la page directement dans le texte du document
             if documents and len(documents) > 0:
-                results_dict[field] = documents[0]
+                docs = documents[0]
+                metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+                enriched_docs = []
+                for doc, meta in zip(docs, metas):
+                    file_name = meta.get("file_name", "")
+                    page = meta.get("page", "")
+                    enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
+                    all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
+                results_dict[field] = enriched_docs
             else:
                 results_dict[field] = []
+        
+        # Dédoublonner les sources par file_name + page + chunk
+        seen = set()
+        unique_sources = []
+        for s in all_sources:
+            key = (s["file_name"], s["page"], s["chunk"])
+            if key not in seen:
+                seen.add(key)
+                unique_sources.append(s)
+        
+        print("############################################")
+        print(results_dict)
+        print("############################################")
         
         ##On va donner results_dict au llm pour qu'il génère une réponse
         dict_to_string = json.dumps(results_dict, ensure_ascii=False)
@@ -95,6 +118,14 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
         mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
+        
+        # Injection de la traçabilité des sources dans le JSON
+        mistral_request_secteur["data"]["traceability"] = {
+            "source_pdf": filename,
+            "extraction_confidence": mistral_request_secteur.get("qualimetrie", {}).get("confiance", ""),
+            "chunks_used": unique_sources
+        }
+        
 
         # ajout en bdd
         id = self.bdd_service.insert_new_fiche(mistral_request_secteur["data"])
@@ -106,7 +137,7 @@ class rag_service():
         #stocker la fiche secteur dans la BDD
         
         logger.info(f"Fiche secteur créée et stockée avec succès pour: {filename}")
-
+        print(fiche_secteur_json)
         return fiche_secteur_json
 
     def process_solution(self, file):
@@ -147,20 +178,42 @@ class rag_service():
 
         ## retrieve from db vect
         results_dict = {}
+        all_sources = []
         for field, embedding in embedded_fields.items():
             results = collection.query(
                 query_embeddings=embedding,
                 n_results=3,
             )
-            # Extraction des documents uniquement
+            # Extraction des documents et métadonnées
             documents = results.get("documents", [])
+            metadatas = results.get("metadatas", [])
 
-            # documents = [[doc1, doc2, doc3]] → on aplati
+            # On intègre le file_name et la page directement dans le texte du document
             if documents and len(documents) > 0:
-                results_dict[field] = documents[0]
+                docs = documents[0]
+                metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+                enriched_docs = []
+                for doc, meta in zip(docs, metas):
+                    file_name = meta.get("file_name", "")
+                    page = meta.get("page", "")
+                    enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
+                    all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
+                results_dict[field] = enriched_docs
             else:
                 results_dict[field] = []
         
+        # Dédoublonner les sources par file_name + page + chunk
+        seen = set()
+        unique_sources = []
+        for s in all_sources:
+            key = (s["file_name"], s["page"], s["chunk"])
+            if key not in seen:
+                seen.add(key)
+                unique_sources.append(s)
+        
+        print("############################################")
+        print(results_dict)
+        print("############################################")
         ###On va donner results_dict au llm pour qu'il génère une réponse
         dict_to_string = json.dumps(results_dict, ensure_ascii=False)
         logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
@@ -168,6 +221,14 @@ class rag_service():
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche solution")
         mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
+        
+        # Injection de la traçabilité des sources dans le JSON
+        mistral_request_solution["data"]["traceability"] = {
+            "source_pdf": filename,
+            "extraction_confidence": mistral_request_solution.get("qualimetrie", {}).get("confiance", ""),
+            "chunks_used": unique_sources
+        }
+        
         # ajout en bdd
         id = self.bdd_service.insert_new_fiche(mistral_request_solution["data"])
         self.bdd_service.add_qualimetrie(id, mistral_request_solution["qualimetrie"])
@@ -177,7 +238,7 @@ class rag_service():
         #stocker la fiche secteur dans la BDD
 
         logger.info(f"Fiche solution créée et stockée avec succès pour: {filename}")
-
+        print(fiche_solution_json)
         return fiche_solution_json
 
 

@@ -13,7 +13,7 @@ class EmbeddingService():
     def __init__(self, config):
         self.config = config
 
-    def _embed_single_text(self, text: str, index: int, semaphore: Semaphore, max_retries: int = 3) -> tuple:
+    def _embed_single_text(self, text: str, index: int, semaphore: Semaphore, max_retries: int = 5) -> tuple:
         """
         Embed un seul texte avec gestion des erreurs et retry.
         
@@ -59,7 +59,7 @@ class EmbeddingService():
         text: Union[str, List[str], List], 
         max_workers: int = 10, 
         rate_limit: int = 20,
-        max_retries: int = 3
+        max_retries: int = 5
     ) -> List:
         """
         Embed une liste de textes en parallèle pour des performances optimales.
