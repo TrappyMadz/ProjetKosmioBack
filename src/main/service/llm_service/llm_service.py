@@ -110,7 +110,7 @@ class LlmService():
             return None
         
     # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution
-    def mistral_request_solution(self,content):
+    def mistral_request_solution(self,content_metadata_summary, content_first_part, content_last_part):
 
         ## Les prompts pour chaques parties
         prompt_title_metadata_summary = self.prompt_header + """
@@ -170,9 +170,9 @@ class LlmService():
         logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
-                executor.submit(self.mistral_request, prompt_title_metadata_summary, content): "title_metadata_summary",
-                executor.submit(self.mistral_request, prompt_content_firstpart, content): "content_firstpart",
-                executor.submit(self.mistral_request, prompt_content_lastpart, content): "content_lastpart",
+                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary): "title_metadata_summary",
+                executor.submit(self.mistral_request, prompt_content_firstpart, content_first_part): "content_firstpart",
+                executor.submit(self.mistral_request, prompt_content_lastpart, content_last_part): "content_lastpart",
             }
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
@@ -274,7 +274,7 @@ class LlmService():
         return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": confiance}}
     
     # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution, avec gestion des erreurs de flux et d'execution
-    def mistral_request_secteur(self,content):
+    def mistral_request_secteur(self,content_metadata_summary, content_firstpart, content_lastpart):
 
         ## Les prompts pour chaques parties
         prompt_title_metadata_summary = self.prompt_header + """
@@ -326,9 +326,9 @@ class LlmService():
         logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
-                executor.submit(self.mistral_request, prompt_title_metadata_summary, content): "title_metadata_summary",
-                executor.submit(self.mistral_request, prompt_content_firstpart, content): "content_firstpart",
-                executor.submit(self.mistral_request, prompt_content_lastpart, content): "content_lastpart",
+                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary): "title_metadata_summary",
+                executor.submit(self.mistral_request, prompt_content_firstpart, content_firstpart): "content_firstpart",
+                executor.submit(self.mistral_request, prompt_content_lastpart, content_lastpart): "content_lastpart",
             }
             for future in as_completed(future_to_key):
                 key = future_to_key[future]

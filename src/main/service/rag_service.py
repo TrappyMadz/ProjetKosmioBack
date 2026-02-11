@@ -70,34 +70,17 @@ class rag_service():
         logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
 
         #embedding question
-        embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES)
+        embedded_fields_metadata_summary = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_METADATA_SUMMARY)
+        embedded_fields_content_firstpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_FIRST_PART)
+        embedded_fields_content_lastpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_LAST_PART)
 
         ## retrieve from db vect
-        results_dict = {}
         all_sources = []
-        for field, embedding in embedded_fields.items():
-            results = collection.query(
-                query_embeddings=embedding,
-                n_results=3,
-            )
-            # Extraction des documents et métadonnées
-            documents = results.get("documents", [])
-            metadatas = results.get("metadatas", [])
 
-            # On intègre le file_name et la page directement dans le texte du document
-            if documents and len(documents) > 0:
-                docs = documents[0]
-                metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
-                enriched_docs = []
-                for doc, meta in zip(docs, metas):
-                    file_name = meta.get("file_name", "")
-                    page = meta.get("page", "")
-                    enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
-                    all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
-                results_dict[field] = enriched_docs
-            else:
-                results_dict[field] = []
-        
+        results_metadata_summary = self.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources)
+        results_first_part = self.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources)
+        results_last_part = self.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources)
+
         # Dédoublonner les sources par file_name + page + chunk
         seen = set()
         unique_sources = []
@@ -106,18 +89,15 @@ class rag_service():
             if key not in seen:
                 seen.add(key)
                 unique_sources.append(s)
-        
-        print("############################################")
-        print(results_dict)
-        print("############################################")
-        
-        ##On va donner results_dict au llm pour qu'il génère une réponse
-        dict_to_string = json.dumps(results_dict, ensure_ascii=False)
-        logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
+
+        dict_to_string_metadata_summary = json.dumps(results_metadata_summary, ensure_ascii=False)
+        dict_to_string_first_part = json.dumps(results_first_part, ensure_ascii=False)
+        dict_to_string_last_part = json.dumps(results_last_part, ensure_ascii=False)
+        logger.debug(f"Contexte RAG préparé pour le LLM (metadata: {len(dict_to_string_metadata_summary)}, first: {len(dict_to_string_first_part)}, last: {len(dict_to_string_last_part)} caractères)")
 
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
-        mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string)
+        mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string_metadata_summary, dict_to_string_first_part, dict_to_string_last_part)
         
         # Injection de la traçabilité des sources dans le JSON
         mistral_request_secteur["data"]["traceability"] = {
@@ -174,34 +154,17 @@ class rag_service():
         logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
 
         #embedding question
-        embedded_fields = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SOLUTION_QUERIES)
+        embedded_fields_metadata_summary = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SOLUTION_QUERIES_METADATA_SUMMARY)
+        embedded_fields_content_firstpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SOLUTION_QUERIES_FIRST_PART)
+        embedded_fields_content_lastpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SOLUTION_QUERIES_LAST_PART)
 
         ## retrieve from db vect
-        results_dict = {}
         all_sources = []
-        for field, embedding in embedded_fields.items():
-            results = collection.query(
-                query_embeddings=embedding,
-                n_results=3,
-            )
-            # Extraction des documents et métadonnées
-            documents = results.get("documents", [])
-            metadatas = results.get("metadatas", [])
 
-            # On intègre le file_name et la page directement dans le texte du document
-            if documents and len(documents) > 0:
-                docs = documents[0]
-                metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
-                enriched_docs = []
-                for doc, meta in zip(docs, metas):
-                    file_name = meta.get("file_name", "")
-                    page = meta.get("page", "")
-                    enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
-                    all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
-                results_dict[field] = enriched_docs
-            else:
-                results_dict[field] = []
-        
+        results_metadata_summary = self.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources)
+        results_first_part = self.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources)
+        results_last_part = self.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources)
+
         # Dédoublonner les sources par file_name + page + chunk
         seen = set()
         unique_sources = []
@@ -210,17 +173,15 @@ class rag_service():
             if key not in seen:
                 seen.add(key)
                 unique_sources.append(s)
-        
-        print("############################################")
-        print(results_dict)
-        print("############################################")
-        ###On va donner results_dict au llm pour qu'il génère une réponse
-        dict_to_string = json.dumps(results_dict, ensure_ascii=False)
-        logger.debug(f"Contexte RAG préparé pour le LLM ({len(dict_to_string)} caractères)")
+
+        dict_to_string_metadata_summary = json.dumps(results_metadata_summary, ensure_ascii=False)
+        dict_to_string_first_part = json.dumps(results_first_part, ensure_ascii=False)
+        dict_to_string_last_part = json.dumps(results_last_part, ensure_ascii=False)
+        logger.debug(f"Contexte RAG préparé pour le LLM (metadata: {len(dict_to_string_metadata_summary)}, first: {len(dict_to_string_first_part)}, last: {len(dict_to_string_last_part)} caractères)")
 
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche solution")
-        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string)
+        mistral_request_solution = self.llm_service.mistral_request_solution(dict_to_string_metadata_summary, dict_to_string_first_part, dict_to_string_last_part)
         
         # Injection de la traçabilité des sources dans le JSON
         mistral_request_solution["data"]["traceability"] = {
@@ -241,6 +202,30 @@ class rag_service():
         print(fiche_solution_json)
         return fiche_solution_json
 
+    ##tools
+    def retrieve_from_collection(self, collection, embedded_fields, all_sources):
+            results_dict = {}
+            for field, embedding in embedded_fields.items():
+                results = collection.query(
+                    query_embeddings=embedding,
+                    n_results=rag_constant.N_RESULTS,
+                )
+                documents = results.get("documents", [])
+                metadatas = results.get("metadatas", [])
+
+                if documents and len(documents) > 0:
+                    docs = documents[0]
+                    metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+                    enriched_docs = []
+                    for doc, meta in zip(docs, metas):
+                        file_name = meta.get("file_name", "")
+                        page = meta.get("page", "")
+                        enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
+                        all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
+                    results_dict[field] = enriched_docs
+                else:
+                    results_dict[field] = []
+            return results_dict
 
 if __name__ == "__main__":
     #test simulé comme utilisé avec l'api

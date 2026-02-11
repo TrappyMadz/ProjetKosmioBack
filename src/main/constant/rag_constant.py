@@ -4,27 +4,44 @@ CHUNK_SIZE = 500
 OVERLAP = 50
 
 # Paramètres LLM
-NUMBER_RESULTS = 100
+N_RESULTS = 4
 
-
-SECTOR_QUERIES = {
-    "title": "nom du secteur d’activité",
+SECTOR_QUERIES_METADATA_SUMMARY = {
+    "title": "le titre de la fiche qui correspond au nom du secteur",
     "sub_sectors": "liste des sous-secteurs associés au secteur",
-    "company_size": "taille des entreprises du secteur TPE PME ETI",
-    "summary": "description des activités du secteur, typologies de sites et contraintes métiers",
+    "company_size": "type d'entreprise sous la forme TPE, PME ou ETI",
+    "contributors": "liste des entreprises ayant contribué à cette publication",
+    "summary": "résumé des activités, typologies de sites, contraintes métiers",
+}
 
-    "emissions_profile": "répartition des postes d’émissions carbone du secteur (process, utilities, bâtiment, transport, déchets)",
+SECTOR_QUERIES_FIRST_PART = {
+    # --- Émissions ---
+    "emissions_profile": "répartition des postes d'émissions : process, utilities, building, transport, waste en pourcentage ou ordre de grandeur",
 
-    "challenges": "principaux enjeux et défis du secteur",
-    "regulations": "réglementations applicables au secteur",
-    "systems_matrix": "systèmes, solutions et leviers techniques du secteur",
-    "sector_path": "parcours de décarbonation recommandé pour le secteur",
-    "use_case": "cas d’usage concrets par sous-secteur avec résultats chiffrés",
-    "resources": "ressources, études, documents de référence du secteur",
+    # --- Enjeux ---
+    "challenges": "liste des enjeux avec le titre et la description de chaque enjeu",
+
+    # --- Réglementations ---
+    "regulations": "liste des réglementations importantes à prendre en compte",
+
+    # --- Systèmes ---
+    "systems_matrix": "liste des systèmes et solutions clés avec le nom du système, l'impact (Faible, Moyen, Fort), la priorité (échelle de 1 à 5) et la liste des solutions",
+}
+
+SECTOR_QUERIES_LAST_PART = {
+    # --- Parcours sectoriel ---
+    "sector_path": "parcours sectoriel recommandé avec les phases (Quick wins, Optimisations, Investissements structurants, Nouvelles énergies, Management & pilotage) et les actions associées à chaque phase",
+
+    # --- Cas d'usage ---
+    "use_case": "liste des actions à réaliser par sous-secteur avec le sous-secteur concerné, les actions à effectuer, les résultats chiffrés et le lien vers la fiche projet",
+
+    # --- Ressources ---
+    "resources": "liste des ressources documentaires avec le titre, le type et le lien de chaque ressource",
 }
 
 
-SOLUTION_QUERIES = {
+
+SOLUTION_QUERIES_METADATA_SUMMARY = {
     # --- Identité ---
     "title": "nom de la solution",
     "category": "catégorie de la solution",
@@ -37,7 +54,10 @@ SOLUTION_QUERIES = {
 
     # --- Résumé ---
     "summary": "résumé et description générale de la solution",
+}
 
+
+SOLUTION_QUERIES_FIRST_PART = {
     # --- Contexte ---
     "context_objective": "objectif principal de la solution",
     "context_target_sites": "types de sites concernés par la solution",
@@ -64,20 +84,20 @@ SOLUTION_QUERIES = {
 
     # --- Leviers ---
     "levers": "leviers techniques ou organisationnels associés à la solution",
+ }
+ 
 
+SOLUTION_QUERIES_LAST_PART = {
     # --- Mise en œuvre ---
-    "implementation_diagnostic": "diagnostic initial pour la mise en œuvre de la solution",
-    "implementation_dimensioning": "dimensionnement de la solution",
-    "implementation_installation": "installation ou déploiement de la solution",
-    "implementation_monitoring": "suivi et pilotage après installation",
+    "implementation_path": "liste des étapes de mise en œuvre : Diagnostic initial, Dimensionnement, Installation, Suivi avec les détails pour chaque étape",
 
     # --- Risques ---
-    "risks": "risques associés à la solution et mesures de mitigation",
+    "risks": "liste des risques associés à la solution",
 
     # --- Exemples ---
-    "examples": "cas d’usage sectoriels de la solution",
+    "exemples": "liste des cas d'usage sectoriels avec le secteur, un résumé de l'utilisation et le lien vers la fiche secteur",
 
     # --- Ressources ---
-    "resources": "ressources documentaires sur la solution"
+    "resources": "liste des ressources documentaires avec le titre, le type et le lien de chaque ressource"
 }
 
