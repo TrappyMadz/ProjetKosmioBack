@@ -15,7 +15,7 @@ class LlmService():
         Tu est un modèle d’extraction d’information.
         Tu dois uniquement que extraire les mots clés.
         Si une information n'est pas trouvée, laisser la valeur de la clé vide.
-        Tu dois formuler des phrases claires qui serviront dans un document récapitulatif.
+        Tu dois formuler des phrases claires en français qui serviront dans un document récapitulatif.
             
         # Format de réponse
         Tu dois renvoyer un JSON valide.
