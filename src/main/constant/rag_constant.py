@@ -1,10 +1,11 @@
 # Paramètres du chunk
 
-CHUNK_SIZE = 500
-OVERLAP = 50
+CHUNK_SIZE = 1000
+OVERLAP = 150
 
 # Paramètres LLM
-N_RESULTS = 4
+N_RESULTS_INITIAL = 20
+N_RESULTS_RERANKED = 5
 
 SECTOR_QUERIES_METADATA_SUMMARY = {
     "title": "le titre de la fiche qui correspond au nom du secteur",

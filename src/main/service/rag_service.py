@@ -7,6 +7,7 @@ import io
 from service.bdd_service.bdd_service import PostgresService
 from service.chunk_service.chunk_service import ChunkService
 from service.embedding_service.embedding_service import EmbeddingService
+from service.rerank_service.rerank_service import ReRankService
 import json
 from model.config import Config
 from constant import rag_constant
@@ -33,6 +34,7 @@ class rag_service():
         self.database_vect_service = DatabaseVectService(self.config) 
         self.llm_service = LlmService(self.config)
         self.bdd_service = PostgresService()
+        self.rerank_service = ReRankService()
         logger.info("RAG Service initialisé avec succès")
 
     
@@ -206,9 +208,10 @@ class rag_service():
     def retrieve_from_collection(self, collection, embedded_fields, all_sources):
             results_dict = {}
             for field, embedding in embedded_fields.items():
+                # 1. Retrieval large depuis ChromaDB
                 results = collection.query(
                     query_embeddings=embedding,
-                    n_results=rag_constant.N_RESULTS,
+                    n_results=rag_constant.N_RESULTS_INITIAL,
                 )
                 documents = results.get("documents", [])
                 metadatas = results.get("metadatas", [])
@@ -216,8 +219,18 @@ class rag_service():
                 if documents and len(documents) > 0:
                     docs = documents[0]
                     metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+
+                    # 2. Re-ranking avec FlashRank
+                    reranked_docs, reranked_metas = self.rerank_service.rerank(
+                        query=field,
+                        documents=docs,
+                        metadatas=metas,
+                        top_k=rag_constant.N_RESULTS_RERANKED
+                    )
+
+                    # 3. Enrichir avec les sources
                     enriched_docs = []
-                    for doc, meta in zip(docs, metas):
+                    for doc, meta in zip(reranked_docs, reranked_metas):
                         file_name = meta.get("file_name", "")
                         page = meta.get("page", "")
                         enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
