@@ -127,28 +127,30 @@ class LlmService():
         - summary : définition rapide de la solution sous forme d'une ou deux phrases et qui en donne les bénéfices principaux
         """
         ## Attention les deux resultats de ces prompt son à integrer dans content
-        prompt_content_firstpart = self.prompt_header + """
-        - context : un dictionnaire de 5 entrées :
-            - objective : le but final de la solution en une phrase
-            - target_sites : une liste des types de sites concernés (exemple : logements collectifs, tertiaire, sites industriels)
-            - scope_includes : une liste d'éléments inclues !!!
-            - scope_excludes : une liste d'éléments exclues !!!
-            - prerequisites : une liste de prérecis réglementaires, techniques ou organisationnels chaqu'un détaillé un
-        - mecanism : un dictionnaire à 2 entrées :
-            - description : Description simple du principe de fonctionnement en 3-4 phrases
-            - variants : Une liste des diffèrentes variantes possible au niveau du fonctionnement en une phrase chaqu'une
-        - applicability : un dictionnaire à 3 entrées :
-            - conditions : une liste des cas où l'usage où la solution semble pertient en une phrase
-            - avoid_if : une liste des cas où l'usage où la solution est a éviter en une phrase
-        - impacts : un dictionnaire de 4 entrées :
-            - energy : estimation qualitative ou valeur de l'énergie dépensée par la mise en place de la solution en une phrase
-            - co2 : ordre de grandeur ou fourchette du co2 produit par la mise en place de la solution
-            - costs : un dictionnaire à 2 entrées :
-              - capex : dépenses d'investissement capex en détaille de quelques phrases avec des chiffres
-              - opex : dépenses d'exploitation opex en détaille de quelques phrases avec des chiffres
-            - co_benefits : une liste des bénéfices autres qu'amène la solution sous forme de groupes nominaux (exemple: amélioration du confort)
-        - levers : une liste des actions concrètes ou facteurs clés sur lesquels on peut agir pour faire fonctionner la solution ou en amplifier l’impact sous forme de phrase
-        """
+        prompt_content_firstpart = """
+            - context : un dictionnaire de 5 entrées :
+                - objective : le but final de la solution en une phrase
+                - target_sites : une liste des types de sites concernés (exemple : logements collectifs, tertiaire, sites industriels)
+                - scope_includes : une liste d'éléments inclues !!!
+                - scope_excludes : une liste d'éléments exclues !!!
+                - prerequisites : une liste de prérecis réglementaires, techniques ou organisationnels chaqu'un détaillé un
+            - mecanism : un dictionnaire à 2 entrées :
+                - description : Description simple du principe de fonctionnement en 3-4 phrases
+                - variants : Une liste des diffèrentes variantes possible au niveau du fonctionnement en une phrase chaqu'une
+            - applicability : un dictionnaire à 3 entrées :
+                - conditions : une liste des cas où l'usage où la solution semble pertient en une phrase
+                - avoid_if : une liste des cas où l'usage où la solution est a éviter en une phrase
+                - contraints : une liste des contraintes apportées par la solution sous forme de groupes nominaux
+            - impacts : un dictionnaire de 4 entrées :
+                - energy : estimation qualitative ou valeur de l'énergie dépensée par la mise en place de la solution en une phrase
+                - co2 : ordre de grandeur ou fourchette du co2 produit par la mise en place de la solution
+                - costs : un dictionnaire à 2 entrées :
+                - capex : dépenses d'investissement capex en détaille de quelques phrases avec des chiffres
+                - opex : dépenses d'exploitation opex en détaille de quelques phrases avec des chiffres
+                - roi : retour sur invertissement de la solution en quelques phrases
+                - co_benefits : une liste des bénéfices autres qu'amène la solution sous forme de groupes nominaux (exemple: amélioration du confort)
+            - levers : une liste des actions concrètes ou facteurs clés sur lesquels on peut agir pour faire fonctionner la solution ou en amplifier l’impact sous forme de phrase
+            """
         prompt_content_lastpart = self.prompt_header + """
         - implementation_path : une liste avec un distionnaire pour chaque step : 
             - step : "Diagnostic initial", "Dimensionnement", "Installation", "Suivi"
