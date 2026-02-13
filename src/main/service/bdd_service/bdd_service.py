@@ -142,7 +142,7 @@ class PostgresService:
         try:
             with connection.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("SELECT * FROM fiche_en_json_history WHERE fiche_id = %s;", (id, ))
-                return cursor.fetchone()
+                return cursor.fetchall()
         except Exception as exception:
             logger.error(f"Erreur lors de la lecture de l'historique de la fiche {id}: {exception}")
             return -1
