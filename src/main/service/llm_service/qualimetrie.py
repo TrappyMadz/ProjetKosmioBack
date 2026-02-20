@@ -74,7 +74,7 @@ def json_bien_constitue_solution(data):
 
     if "content" in champs_json:
         champs_attendus_n2 = {
-            "context", "mechanism", "applicability", "impacts",
+            "context", "mecanism", "applicability", "impacts",
             "levers", "implementation_path", "risks", "examples", "resources"
         }
         champs_content = set(data["content"].keys())
@@ -86,10 +86,10 @@ def json_bien_constitue_solution(data):
             res_entrop.append("content.context :" + str(set(data["content"]["context"].keys()).difference(champs_attendus_n3)))
             res_enmoins.append("content.context :" + str(champs_attendus_n3.difference(set(data["content"]["context"].keys()))))
 
-        if "mechanism" in champs_content:
+        if "mecanism" in champs_content:
             champs_attendus_n3 = {"description", "variants"}
-            res_entrop.append("content.mechanism :" + str(set(data["content"]["mechanism"].keys()).difference(champs_attendus_n3)))
-            res_enmoins.append("content.mechanism :" + str(champs_attendus_n3.difference(set(data["content"]["mechanism"].keys()))))
+            res_entrop.append("content.mecanism :" + str(set(data["content"]["mecanism"].keys()).difference(champs_attendus_n3)))
+            res_enmoins.append("content.mecanism :" + str(champs_attendus_n3.difference(set(data["content"]["mecanism"].keys()))))
 
         if "applicability" in champs_content:
             champs_attendus_n3 = {"conditions", "avoid_if"}

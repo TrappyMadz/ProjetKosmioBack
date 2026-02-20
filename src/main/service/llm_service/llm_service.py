@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import service.llm_service.qualimetrie as qualimetrie 
 import math
 from config.logging_config import get_logger
+from service.llm_service.structure_pour_llm import Json1, Json2, Json3
 
 # Logger pour ce module
 logger = get_logger("llm_service")
@@ -26,7 +27,8 @@ class LlmService():
         self.config = config
     
     # Requete à mistral, retourne le json demandé par le prompt dans le payload
-    def mistral_request(self,prompt,content):
+    def mistral_request(self, prompt, content, obj):
+
         print("Envoi de la requête à Mistral avec le prompt :")
         print(prompt)
         url = self.config.url_model_llm
@@ -38,7 +40,13 @@ class LlmService():
             ],
             "model": self.config.model_llm,
             "temperature": 0.1,
-            "response_format": {"type": "json_object"},
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": obj.__name__,   # IMPORTANT
+                    "schema": obj.model_json_schema()
+                }
+            },
             "logprobs": True
         }
         
@@ -687,3 +695,10 @@ class LlmService():
         except Exception as e:
             print(f"Erreur inattendue : {e}")
             return None
+        
+
+
+
+
+
+    
