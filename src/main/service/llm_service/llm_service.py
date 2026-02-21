@@ -3,10 +3,11 @@ import json
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from service.llm_service.structure_secteur_pour_llm import JsonSecteur1, JsonSecteur2, JsonSecteur3
 import service.llm_service.qualimetrie as qualimetrie 
 import math
 from config.logging_config import get_logger
-from service.llm_service.structure_pour_llm import Json1, Json2, Json3
+from service.llm_service.structure_solution_pour_llm import JsonSolution1, JsonSolution2, JsonSolution3
 
 # Logger pour ce module
 logger = get_logger("llm_service")
@@ -180,9 +181,9 @@ class LlmService():
         logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
-                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary): "title_metadata_summary",
-                executor.submit(self.mistral_request, prompt_content_firstpart, content_first_part): "content_firstpart",
-                executor.submit(self.mistral_request, prompt_content_lastpart, content_last_part): "content_lastpart",
+                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary, JsonSolution1): "title_metadata_summary",
+                executor.submit(self.mistral_request, prompt_content_firstpart, content_first_part, JsonSolution2): "content_firstpart",
+                executor.submit(self.mistral_request, prompt_content_lastpart, content_last_part, JsonSolution3): "content_lastpart",
             }
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
@@ -298,8 +299,9 @@ class LlmService():
             - contributors : une listes des entreprises ayant contribués à cette publication
         - summary : résumé des activités, typologies de sites, contraintes métiers
         """
-        ## Attention les deux resultats de ces prompt son à integrer dans content
+        ## Attention les deux resultats de ces prompt son à integrer dans content IL MANQUE DESCRIPTION ?
         prompt_content_firstpart = self.prompt_header + """
+        
          - emissions_profile : un dictionnaire contenant 5 entrées qui définissent la répartition des postes d'émissions : 
             - process : en pourcentage ou ordre de grandeur,
             - utilities : en pourcentage ou ordre de grandeur,
@@ -336,9 +338,9 @@ class LlmService():
         logprobs_t = []
         with ThreadPoolExecutor(max_workers=3) as executor:
             future_to_key = {
-                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary): "title_metadata_summary",
-                executor.submit(self.mistral_request, prompt_content_firstpart, content_firstpart): "content_firstpart",
-                executor.submit(self.mistral_request, prompt_content_lastpart, content_lastpart): "content_lastpart",
+                executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary, JsonSecteur1): "title_metadata_summary",
+                executor.submit(self.mistral_request, prompt_content_firstpart, content_firstpart, JsonSecteur2): "content_firstpart",
+                executor.submit(self.mistral_request, prompt_content_lastpart, content_lastpart, JsonSecteur3): "content_lastpart",
             }
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
@@ -557,7 +559,7 @@ class LlmService():
         - chunks_used : liste vide"""
 
     # Fonction obsolète ne traitant pas les erreurs de flux, à remplacer par mistral_request_solution qui traite les erreurs et utilise des requetes en parallèle pour les différentes parties du json solution
-    def mistral_request_solution_obs(self, content):
+    def mistral_request_solution_obs(self, content, obj):
         url = self.config.url_model_llm
         payload = {
             "messages": [
@@ -566,7 +568,10 @@ class LlmService():
             ],
             "model": self.config.model_llm,
             "temperature": 0.1,
-            "response_format": {"type": "json_object"}
+            "response_format": {
+            "type": "json_schema",
+            "json_schema": obj.model_json_schema()
+            },
         }
 
         headers = {
