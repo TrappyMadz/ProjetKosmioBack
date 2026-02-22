@@ -5,8 +5,11 @@ from service.rag_service import rag_service
 from dotenv import load_dotenv
 from model.fiche_data import Fiche
 from config.logging_config import get_logger
+from fastapi.responses import StreamingResponse
 import os
 import json
+from service.bdd_service.bdd_service import PostgresService
+from service.bucket_service.bucket_service import BucketService
 
 # Logger pour ce module
 logger = get_logger(__name__)
@@ -36,6 +39,10 @@ rag_app.add_middleware(
 
 # Initialisation du service
 rag_service_instance = rag_service()
+
+bdd_service = PostgresService()
+bucket_service = BucketService()
+
 
 @rag_app.get("/")
 async def home():
@@ -87,9 +94,6 @@ async def process_sector(pdf: UploadFile = File(...)):
     
     try:
         # Traitement du fichier
-        logger.info(f"Traitement d'un secteur - fichier: {pdf.filename}")
-        result = rag_service_instance.process_sector(pdf)
-        return result
         logger.info(f"Traitement d'un secteur - fichier: {pdf.filename}")
         result = rag_service_instance.process_sector(pdf)
         logger.info(f"Secteur traité avec succès - fichier: {pdf.filename}")
@@ -228,7 +232,75 @@ async def get_fiche_by_id(id: int):
 
 
 
+@rag_app.post("/v1/addimage/{id_fiche}/{section}")
+async def upload_fiche_image(id_fiche: int, section: str, file: UploadFile = File(...)):
 
+    if not bdd_service.check_fiche_exists(id_fiche):
+        raise HTTPException(status_code=404, detail=f"La fiche {id_fiche} n'existe pas.")
+
+    content = await file.read()
+    file_key = bucket_service.upload_image(content, file.filename)
+    
+    if not file_key:
+        raise HTTPException(status_code=500, detail="Erreur lors du stockage binaire")
+
+    try:
+        attachment_id = bdd_service.save_attachment_and_update_fiche(
+            fiche_id=id_fiche,
+            file_key=file_key,
+            section=section,
+            file_name=file.filename,
+            content_type=file.content_type
+        )
+
+        if not attachment_id:
+            raise Exception("L'enregistrement en base de données a échoué")
+
+    except Exception as e:
+        # NETTOYAGE : Si la BDD échoue, on supprime le fichier de MinIO pour ne pas laisser d'orphelin
+        bucket_service.delete_image(file_key)
+        logger.error(f"Annulation de l'upload MinIO suite à erreur BDD : {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la liaison base de données")
+
+    return {
+        "message": "Image ajoutée avec succès",
+        "image_id": attachment_id,
+        "fiche_id": id_fiche,
+        "section": section
+    }
+
+@rag_app.get("/v1/getImg/{id}")
+async def get_image(id: int):
+    # On cherche où est l'image dans le bucket via la BDD
+    attachment = bdd_service.get_attachment_by_id(id)
+    if not attachment:
+        raise HTTPException(status_code=404, detail="L'ID de l'image n'existe pas.")
+
+    # On récupère le flux binaire dans MinIO
+    image_stream = bucket_service.get_image_stream(attachment['file_key'])
+    if not image_stream:
+        raise HTTPException(status_code=404, detail="Fichier introuvable dans le bucket.")
+
+    # On renvoie l'image avec le bon type (PNG, JPEG, etc.)
+    return StreamingResponse(image_stream, media_type=attachment['content_type'])
+
+@rag_app.delete("/v1/deleteImg/{id_fiche}/{id_img}")
+async def delete_fiche_image(id_fiche: int, id_img: int):
+    # On exécute la logique en BDD
+    result = bdd_service.delete_image_logic(id_fiche, id_img)
+    
+    if result is False:
+        raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour de la base de données")
+
+    # Si la BDD nous renvoie une file_key, c'est que l'image n'était plus utilisée
+    # On peut donc la supprimer physiquement de MinIO
+    if result:
+        success = bucket_service.delete_image(result)
+        if not success:
+            logger.warning(f"Lien supprimé en BDD mais échec suppression binaire MinIO pour {result}")
+        return {"message": "Image retirée de la fiche et supprimée du stockage (plus utilisée)."}
+
+    return {"message": "Image retirée de la fiche, mais conservée dans le stockage car utilisée dans l'historique ou par une autre fiche."}
 
 
 # Pour lancer l'application :

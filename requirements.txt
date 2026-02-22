@@ -14,3 +14,5 @@ uvicorn
 python-multipart
 urllib3
 flashrank
+
+boto3==1.34.0

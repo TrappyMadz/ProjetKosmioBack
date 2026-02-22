@@ -23,6 +23,17 @@ class PostgresService:
             logger.error(f"Erreur de connexion à la BDD: {exception}")
             raise exception
 
+    def check_fiche_exists(self, fiche_id):
+        """Vérifie rapidement si une fiche existe."""
+        connection = self._get_connection()
+        if not connection: return False
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM fiche_en_json WHERE id = %s;", (fiche_id,))
+                return cursor.fetchone() is not None
+        finally:
+            connection.close()
+
     # ---Fonction CREATE---
     def insert_new_fiche(self, data):
         """
@@ -219,6 +230,112 @@ class PostgresService:
             connection.rollback()
             logger.error(f"Erreur de suppression de la fiche {id}: {exception}")
             raise exception
+        finally:
+            connection.close()
+
+    def get_attachment_by_id(self, attachment_id):
+        """Récupère les métadonnées de l'image (clé et type) pour l'affichage."""
+        connection = self._get_connection()
+        if not connection: return None
+        try:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                # On récupère file_key et content_type
+                query = "SELECT file_key, content_type FROM attachments WHERE attachment_id = %s;"
+                cursor.execute(query, (attachment_id,))
+                return cursor.fetchone()
+        finally:
+            connection.close()
+
+
+    def save_attachment_and_update_fiche(self, fiche_id, file_key, section, file_name, content_type):
+        """
+        Enregistre l'image dans 'attachments' et met à jour le champ 'images' de la fiche.
+        """
+        connection = self._get_connection()
+        if not connection: return None
+        
+        try:
+            with connection.cursor() as cursor:
+                # On insère dans la table attachments
+                query_attachment = """
+                    INSERT INTO attachments (fiche_id, file_key, bucket_name, file_name, content_type)
+                    VALUES (%s, %s, %s, %s, %s) RETURNING attachment_id;
+                """
+                cursor.execute(query_attachment, (fiche_id, file_key, "fiches-images", file_name, content_type))
+                new_attachment_id = cursor.fetchone()[0]
+
+                # On met à jour le JSONB 'images' de la fiche
+                # On utilise jsonb_set pour ajouter l'ID dans la bonne section du dictionnaire
+                query_update_fiche = f"""
+                    UPDATE fiche_en_json 
+                    SET images = jsonb_set(
+                        COALESCE(images, '{{}}'), 
+                        '{{{section}}}', 
+                        COALESCE(images->'{section}', '[]'::jsonb) || TO_JSONB(%s::int)
+                    )
+                    WHERE id = %s;
+                """
+                cursor.execute(query_update_fiche, (new_attachment_id, fiche_id))
+                
+                connection.commit()
+                return new_attachment_id
+        except Exception as e:
+            connection.rollback()
+            logger.error(f"Erreur traçabilité image : {e}")
+            return None
+        finally:
+            connection.close()
+
+    def delete_image_logic(self, id_fiche, id_img):
+        connection = self._get_connection()
+        if not connection: return None
+        file_key_to_delete = None
+
+        try:
+            with connection.cursor() as cursor:
+                # Retrait de l'ID de la fiche actuelle
+                query_remove = """
+                    UPDATE fiche_en_json
+                    SET images = (
+                        SELECT jsonb_object_agg(key, (
+                            SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+                            FROM jsonb_array_elements(val) AS elem
+                            WHERE elem::int != %s
+                        ))
+                        FROM jsonb_each(images) AS sections(key, val)
+                    )
+                    WHERE id = %s;
+                """
+                cursor.execute(query_remove, (id_img, id_fiche))
+
+                # VÉRIFICATION CIBLÉE : On ne regarde QUE l'historique de CETTE fiche
+                # On vérifie si l'ID de l'image est encore présent dans les archives de 'id_fiche'
+                check_history_query = """
+                    SELECT EXISTS (
+                        SELECT 1 FROM fiche_en_json_history 
+                        WHERE fiche_id = %s 
+                        AND images @@ ('$.* == ' || %s)::jsonpath
+                    );
+                """
+                cursor.execute(check_history_query, (id_fiche, id_img))
+                is_still_in_history = cursor.fetchone()[0]
+
+                # Suppression si l'historique de cette fiche n'en a plus besoin
+                if not is_still_in_history:
+                    # On récupère la clé pour MinIO avant de supprimer la ligne
+                    cursor.execute("SELECT file_key FROM attachments WHERE attachment_id = %s;", (id_img,))
+                    res = cursor.fetchone()
+                    if res:
+                        file_key_to_delete = res[0]
+                        cursor.execute("DELETE FROM attachments WHERE attachment_id = %s;", (id_img,))
+
+                connection.commit()
+                return file_key_to_delete # Retourne la clé si on doit supprimer dans MinIO
+                
+        except Exception as e:
+            connection.rollback()
+            logger.error(f"Erreur suppression image : {e}")
+            return False
         finally:
             connection.close()
 

@@ -9,3 +9,4 @@ class Fiche(BaseModel):
     content: Dict[str, Any] = {}
     contribution: Dict[str, Any] = {}
     traceability: Dict[str, Any] = {}
+    images: Dict = {}

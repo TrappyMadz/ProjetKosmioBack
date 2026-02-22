@@ -11,16 +11,22 @@ services:
       - OVH_API_KEY=${OVH_API_KEY}
       - PYTHONPATH=/app/src/main
       - PYTHONUNBUFFERED=1
-      - CHROMA_HOST=chroma_server 
+      - CHROMA_HOST=chroma_server
       - CHROMA_PORT=8000
       - CHROMA_TOKEN=${CHROMA_TOKEN}
+      - BUCKET_HOST=minio
+      - BUCKER_PORT=9000
+      - BUCKET_ROOT_USER=${MINIO_ROOT_USER}
+      - BUCKET_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     depends_on:
       db:
         condition: service_started
       chroma_server:
         condition: service_started
+      minio:
+        condition: service_started
     restart: on-failure
-        
+
   db:
     image: postgres:15
     container_name: kosmio_db
@@ -33,7 +39,7 @@ services:
       - ./src/main/service/bdd_service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "${BACKEND_DB_PORT}:5432"
-      
+
   chroma_server:
     image: chromadb/chroma:latest
     container_name: kosmio_chroma
@@ -47,7 +53,20 @@ services:
     ports:
       - "${CHROMA_HOST_PORT}:8000"
     restart: unless-stopped
+  minio:
+    image: minio/minio
+    container_name: kosmio_bucket
+    ports:
+      - "${BUCKET_API_PORT}:9000"
+      - "${BUCKET_CONSOLE_PORT}:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
 
 volumes:
   pgdata:
   chroma_data:
+  minio_data:
