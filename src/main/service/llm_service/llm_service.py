@@ -3,11 +3,11 @@ import json
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from service.llm_service.structure_secteur_pour_llm import JsonSecteur1, JsonSecteur2, JsonSecteur3
+from model.structure_secteur_pour_llm import JsonSecteur1, JsonSecteur2, JsonSecteur3
 import service.llm_service.qualimetrie as qualimetrie 
 import math
 from config.logging_config import get_logger
-from service.llm_service.structure_solution_pour_llm import JsonSolution1, JsonSolution2, JsonSolution3
+from model.structure_solution_pour_llm import JsonSolution1, JsonSolution2, JsonSolution3
 
 # Logger pour ce module
 logger = get_logger("llm_service")
