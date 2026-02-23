@@ -209,48 +209,9 @@ class fiches_service():
         history = self.bdd_service.get_one_fiche_history(id)
         return history
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def update_fiche(self,id: int, data):
         updated_id = self.bdd_service.update_fiche(id, data.model_dump())
         return updated_id
-=======
-                if documents and len(documents) > 0:
-                    docs = documents[0]
-                    metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
-
-                    # 2. Re-ranking avec FlashRank
-                    reranked_docs, reranked_metas = self.rerank_service.rerank(
-                        query=field,
-                        documents=docs,
-                        metadatas=metas,
-                        top_k=rag_constant.N_RESULTS_RERANKED
-                    )
-
-                    # 3. Enrichir avec les sources
-                    enriched_docs = []
-                    for doc, meta in zip(reranked_docs, reranked_metas):
-                        file_name = meta.get("file_name", "")
-                        page = meta.get("page", "")
-                        enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
-                        all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
-                    results_dict[field] = enriched_docs
-                else:
-                    results_dict[field] = []
-            return results_dict
-
-if __name__ == "__main__":
-    #test simulé comme utilisé avec l'api
-    fiches_service_instance = fiches_service()
-    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
-        mock_pdf = UploadFile(file=f, filename="a.pdf")
-        fiches_service_instance.process_sector(mock_pdf)
->>>>>>> d289a33 (naming : renaming files)
-=======
-    def update_fiche(self,id: int, data):
-        updated_id = self.bdd_service.update_fiche(id, data.model_dump())
-        return updated_id
->>>>>>> 60a8258 (refactor : refactoring code to job logic)
 
     def get_all_fiche_solution(self):
         return self.bdd_service.get_all_solutions()
