@@ -210,6 +210,7 @@ class fiches_service():
         return history
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def update_fiche(self,id: int, data):
         updated_id = self.bdd_service.update_fiche(id, data.model_dump())
         return updated_id
@@ -245,6 +246,11 @@ if __name__ == "__main__":
         mock_pdf = UploadFile(file=f, filename="a.pdf")
         fiches_service_instance.process_sector(mock_pdf)
 >>>>>>> d289a33 (naming : renaming files)
+=======
+    def update_fiche(self,id: int, data):
+        updated_id = self.bdd_service.update_fiche(id, data.model_dump())
+        return updated_id
+>>>>>>> 60a8258 (refactor : refactoring code to job logic)
 
     def get_all_fiche_solution(self):
         return self.bdd_service.get_all_solutions()
