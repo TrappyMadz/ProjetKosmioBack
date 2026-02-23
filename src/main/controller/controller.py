@@ -112,7 +112,11 @@ def get_fiche_history(id: int):
     Renvoie une erreur 404 si la fiche n'existe pas ou qu'elle n'a pas "d'ancienne version" (aucune modifications ?).
     """
     try:
+<<<<<<< HEAD
         history = fiches_service_instance.get_fiche_history(id)
+=======
+        history = fiches_service_instance.bdd_service.get_one_fiche_history(id)
+>>>>>>> d289a33 (naming : renaming files)
         if history is None:
             raise HTTPException(
                 status_code=404,
@@ -138,7 +142,11 @@ async def update_fiche(id: int, data: Fiche):
     """
     try:
         logger.info(f"Mise à jour de la fiche {id}")
+<<<<<<< HEAD
         updated_id = fiches_service_instance.update_fiche(id, data.model_dump())
+=======
+        updated_id = fiches_service_instance.bdd_service.update_fiche(id, data.model_dump())
+>>>>>>> d289a33 (naming : renaming files)
 
         if updated_id is None:
             logger.warning(f"Mise à jour impossible: fiche {id} introuvable")
@@ -167,7 +175,11 @@ async def get_all_fiche_solution():
     Renvoie la liste des fiches de type solution dans leur dernière version
     """
     try:
+<<<<<<< HEAD
         fiches = fiches_service_instance.get_all_fiche_solution()
+=======
+        fiches = fiches_service_instance.bdd_service.get_all_solutions()
+>>>>>>> d289a33 (naming : renaming files)
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -190,7 +202,11 @@ async def get_all_fiche_sector():
     Renvoie la liste des fiches de type secteur dans leur dernière version
     """
     try:
+<<<<<<< HEAD
         fiches = fiches_service_instance.get_all_fiche_sector()
+=======
+        fiches = fiches_service_instance.bdd_service.get_all_sectors()
+>>>>>>> d289a33 (naming : renaming files)
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -213,7 +229,11 @@ async def get_fiche_by_id(id: int):
     Renvoie la fiche d'id id ou 404 si la fiche n'existe pas
     """
     try:
+<<<<<<< HEAD
         fiche = fiches_service_instance.get_fiche_by_id(id)
+=======
+        fiche = fiches_service_instance.bdd_service.get_fiche_by_id(id)
+>>>>>>> d289a33 (naming : renaming files)
         if fiche is None:
             raise HTTPException(
                 status_code=404,
