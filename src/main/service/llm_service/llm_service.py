@@ -204,7 +204,6 @@ class LlmService():
                     results[key] = {"error": str(e)}
                 
         # Validation et normalisation des fragments
-        print("ok")
         print (f"Logprobs totaux : {logprobs_t}")
         def _safe_dict(res, name):
             if res is None:
@@ -362,7 +361,7 @@ class LlmService():
                     results[key] = {"error": str(e)}
 
         # Validation et normalisation des fragments
-        print("ok")
+
         print (f"Logprobs totaux : {logprobs_t}")
         def _safe_dict(res, name):
             if res is None:
