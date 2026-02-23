@@ -248,6 +248,9 @@ class LlmService():
         ## Calcul du taux de complétion
         tauxCompletion = qualimetrie.taux_remplissage(final_json)
         print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
+        ### Calcul du taux de confiance
+        c = qualimetrie.confiance(json.dumps(final_json, ensure_ascii=False), logprobs_t)
+        print(f"Confiance détaillée : {c}")
 
         ## Ajout des informations complèmentaires
         final_json["contribution"] = {
@@ -276,13 +279,11 @@ class LlmService():
 
         #print("JSON final généré :")
         #print(json.dumps(final_json, indent=2, ensure_ascii=False))
-        confiance = qualimetrie.confiance_global(logprobs_t)
-        print(f"Confiance globale calculée : {confiance:.4f}")
         bonne_constitution = qualimetrie.json_bien_constitue(final_json)
-        
+
         print(f"en trop : {bonne_constitution[0]}")
         print(f"manquants : {bonne_constitution[1]}")
-        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": confiance}}
+        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": c["global_confidence"]}}
     
     # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution, avec gestion des erreurs de flux et d'execution
     def mistral_request_secteur(self,content_metadata_summary, content_firstpart, content_lastpart):
@@ -405,6 +406,9 @@ class LlmService():
         ## Calcul du taux de complétion
         tauxCompletion = qualimetrie.taux_remplissage(final_json)
         print(f"Taux de complétion : {tauxCompletion*100:.2f}%")
+        ### Calcul du taux de confiance
+        c = qualimetrie.confiance(json.dumps(final_json, ensure_ascii=False), logprobs_t)
+        print(f"Confiance détaillée : {c}")
 
         ## Ajout des informations complèmentaires
         final_json["contribution"] = {
@@ -431,13 +435,11 @@ class LlmService():
 
         #print("JSON final généré :")
         #print(json.dumps(final_json, indent=2, ensure_ascii=False))
-        confiance = qualimetrie.confiance_global(logprobs_t)
-        print(f"Confiance globale calculée : {confiance:.4f}")
         bonne_constitution = qualimetrie.json_bien_constitue(final_json)
         
         print(f"en trop : {bonne_constitution[0]}")
         print(f"manquants : {bonne_constitution[1]}")
-        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": confiance}}
+        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": c["global_confidence"]}}
     
     
 ############# Fonctions obsolètes #############

@@ -1,5 +1,5 @@
 ### taux de remplissage d'un json, recherche des champs vides.
-
+import json
 import math
 
 
@@ -34,15 +34,105 @@ def taux_remplissage(json):
     taux = (totT - videT) / totT
     return taux
 
+def confiance(text, logprobs):
+    """
+    text: string JSON généré par le LLM
+    logprobs: liste type Mistral -> [{"token": "...", "logprob": -0.23}, ...]
+    """
 
-# confiance : 
+    # ---------- reconstruire tokens avec positions ----------
+    tokens = []
+    current_pos = 0
 
-def confiance_global(logprobs: list):
-    if not logprobs or not isinstance(logprobs, list) or len(logprobs) == 0:
-        return 0.0
-    avg_logprob = sum(t["logprob"] for t in logprobs) / len(logprobs)
-    confiance = math.exp(avg_logprob)
-    return round(confiance, 3)
+    for item in logprobs:
+        token = item["token"]
+        lp = item["logprob"]
+
+        start = current_pos
+        end = start + len(token)
+
+        tokens.append({
+            "token": token,
+            "logprob": lp,
+            "start": start,
+            "end": end
+        })
+
+        current_pos = end
+
+    # ---------- extraire champs string ----------
+    try:
+        data = json.loads(text)
+    except Exception:
+        return {"global_confidence": 0, "fields": {}}
+
+    def extract_strings(obj, path=""):
+        results = []
+
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                new_path = f"{path}.{k}" if path else k
+                results.extend(extract_strings(v, new_path))
+
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                new_path = f"{path}[{i}]"
+                results.extend(extract_strings(item, new_path))
+
+        elif isinstance(obj, str):
+            results.append({"path": path, "value": obj})
+
+        return results
+
+    fields = extract_strings(data)
+
+    # ---------- calcul confiance par champ ----------
+    field_scores = {}
+
+    for field in fields:
+        value = field["value"]
+        path = field["path"]
+
+        start_index = text.find(value)
+        if start_index == -1:
+            continue
+
+        end_index = start_index + len(value)
+
+        relevant = [
+            t["logprob"]
+            for t in tokens
+            if t["start"] >= start_index
+            and t["end"] <= end_index
+            and len(t["token"].strip()) > 2  # ignore petits tokens
+        ]
+
+        if not relevant:
+            continue
+
+        mean_logprob = sum(relevant) / len(relevant)
+
+        # transformation en probabilité 0-1
+        confidence = math.exp(mean_logprob)
+
+        # pénalité si tokens très improbables
+        low_prob_ratio = sum(lp < -4 for lp in relevant) / len(relevant)
+
+        adjusted_confidence = confidence * (1 - low_prob_ratio)
+
+        field_scores[path] = round(adjusted_confidence, 4)
+
+    # ---------- score global ----------
+    if field_scores:
+        global_confidence = sum(field_scores.values()) / len(field_scores)
+    else:
+        global_confidence = 0
+
+    return {
+        "global_confidence": round(global_confidence, 4),
+        "fields": field_scores
+    }
+
 
 
 ### Json bien constitué : pas de champs manquant et pas de champs inventés
