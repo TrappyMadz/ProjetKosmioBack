@@ -435,11 +435,9 @@ class LlmService():
 
         #print("JSON final généré :")
         #print(json.dumps(final_json, indent=2, ensure_ascii=False))
-        bonne_constitution = qualimetrie.json_bien_constitue(final_json)
-        
-        print(f"en trop : {bonne_constitution[0]}")
-        print(f"manquants : {bonne_constitution[1]}")
-        return {"data" : final_json, "qualimetrie":{"en_trop": bonne_constitution[0], "manquants": bonne_constitution[1], "completion": tauxCompletion, "confiance": c["global_confidence"]}}
+
+
+        return {"data" : final_json, "qualimetrie":{"completion": tauxCompletion, "confiance": c["global_confidence"]}}
     
     
 ############# Fonctions obsolètes #############
