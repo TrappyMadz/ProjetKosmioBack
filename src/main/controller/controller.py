@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from service.rag_service import rag_service
+from service.fiches_service import fiches_service
 from dotenv import load_dotenv
 from model.fiche_data import Fiche
 from config.logging_config import get_logger
@@ -38,7 +38,7 @@ rag_app.add_middleware(
 )
 
 # Initialisation du service
-rag_service_instance = rag_service()
+fiches_service_instance = fiches_service()
 
 bdd_service = PostgresService()
 bucket_service = BucketService()
@@ -67,7 +67,7 @@ async def process_solution(pdf: UploadFile = File(...)):
     try:
         # Traitement du fichier
         logger.info(f"Traitement d'une solution - fichier: {pdf.filename}")
-        result = rag_service_instance.process_solution(pdf)
+        result = fiches_service_instance.process_solution(pdf)
         logger.info(f"Solution traitée avec succès - fichier: {pdf.filename}")
         return json.loads(result)
     except Exception as e:
@@ -95,7 +95,7 @@ async def process_sector(pdf: UploadFile = File(...)):
     try:
         # Traitement du fichier
         logger.info(f"Traitement d'un secteur - fichier: {pdf.filename}")
-        result = rag_service_instance.process_sector(pdf)
+        result = fiches_service_instance.process_sector(pdf)
         logger.info(f"Secteur traité avec succès - fichier: {pdf.filename}")
         return json.loads(result)
     except Exception as e:
@@ -112,7 +112,7 @@ def get_fiche_history(id: int):
     Renvoie une erreur 404 si la fiche n'existe pas ou qu'elle n'a pas "d'ancienne version" (aucune modifications ?).
     """
     try:
-        history = rag_service_instance.bdd_service.get_one_fiche_history(id)
+        history = fiches_service_instance.bdd_service.get_one_fiche_history(id)
         if history is None:
             raise HTTPException(
                 status_code=404,
@@ -138,7 +138,7 @@ async def update_fiche(id: int, data: Fiche):
     """
     try:
         logger.info(f"Mise à jour de la fiche {id}")
-        updated_id = rag_service_instance.bdd_service.update_fiche(id, data.model_dump())
+        updated_id = fiches_service_instance.bdd_service.update_fiche(id, data.model_dump())
 
         if updated_id is None:
             logger.warning(f"Mise à jour impossible: fiche {id} introuvable")
@@ -167,7 +167,7 @@ async def get_all_fiche_solution():
     Renvoie la liste des fiches de type solution dans leur dernière version
     """
     try:
-        fiches = rag_service_instance.bdd_service.get_all_solutions()
+        fiches = fiches_service_instance.bdd_service.get_all_solutions()
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -190,7 +190,7 @@ async def get_all_fiche_sector():
     Renvoie la liste des fiches de type secteur dans leur dernière version
     """
     try:
-        fiches = rag_service_instance.bdd_service.get_all_sectors()
+        fiches = fiches_service_instance.bdd_service.get_all_sectors()
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -213,7 +213,7 @@ async def get_fiche_by_id(id: int):
     Renvoie la fiche d'id id ou 404 si la fiche n'existe pas
     """
     try:
-        fiche = rag_service_instance.bdd_service.get_fiche_by_id(id)
+        fiche = fiches_service_instance.bdd_service.get_fiche_by_id(id)
         if fiche is None:
             raise HTTPException(
                 status_code=404,

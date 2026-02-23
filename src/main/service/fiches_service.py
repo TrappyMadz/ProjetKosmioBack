@@ -15,7 +15,7 @@ from fastapi import UploadFile
 from config.logging_config import get_logger
 
 # Logger pour ce module
-logger = get_logger("rag_service")
+logger = get_logger("fiches_service")
 
 
 def load_file(file):
@@ -24,7 +24,7 @@ def load_file(file):
         return json.load(read_file)
         
 
-class rag_service():
+class fiches_service():
     def __init__(self):  #remettre src/main
         self.config = Config(load_file("src/main/config/config.json"))
 
@@ -242,9 +242,9 @@ class rag_service():
 
 if __name__ == "__main__":
     #test simulé comme utilisé avec l'api
-    rag_service_instance = rag_service()
+    fiches_service_instance = fiches_service()
     with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
         mock_pdf = UploadFile(file=f, filename="a.pdf")
-        rag_service_instance.process_sector(mock_pdf)
+        fiches_service_instance.process_sector(mock_pdf)
 
 

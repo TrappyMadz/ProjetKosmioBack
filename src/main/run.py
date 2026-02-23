@@ -1,4 +1,4 @@
-from controller import rag_controller
+from controller import controller
 import os
 import json
 from dotenv import load_dotenv
@@ -10,7 +10,7 @@ from config.logging_config import setup_logging, get_logger
 setup_logging(log_level="INFO")
 logger = get_logger(__name__)
 
-app = rag_controller.rag_app
+app = controller.rag_app
 
 if __name__ == "__main__":
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     ##Lancer le serveur fastapi avec uvicorn
     logger.info("Démarrage du serveur FastAPI sur le port 8123")
     uvicorn.run(
-            "controller.rag_controller:rag_app",  # module:app
+            "controller.controller:rag_app",  # module:app
             host="0.0.0.0",
             port=8123,
             reload=True  # équivalent de debug=True
