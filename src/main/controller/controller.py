@@ -112,7 +112,7 @@ def get_fiche_history(id: int):
     Renvoie une erreur 404 si la fiche n'existe pas ou qu'elle n'a pas "d'ancienne version" (aucune modifications ?).
     """
     try:
-        history = fiches_service_instance.bdd_service.get_one_fiche_history(id)
+        history = fiches_service_instance.get_fiche_history(id)
         if history is None:
             raise HTTPException(
                 status_code=404,
@@ -138,7 +138,7 @@ async def update_fiche(id: int, data: Fiche):
     """
     try:
         logger.info(f"Mise à jour de la fiche {id}")
-        updated_id = fiches_service_instance.bdd_service.update_fiche(id, data.model_dump())
+        updated_id = fiches_service_instance.update_fiche(id, data.model_dump())
 
         if updated_id is None:
             logger.warning(f"Mise à jour impossible: fiche {id} introuvable")
@@ -167,7 +167,7 @@ async def get_all_fiche_solution():
     Renvoie la liste des fiches de type solution dans leur dernière version
     """
     try:
-        fiches = fiches_service_instance.bdd_service.get_all_solutions()
+        fiches = fiches_service_instance.get_all_fiche_solution()
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -190,7 +190,7 @@ async def get_all_fiche_sector():
     Renvoie la liste des fiches de type secteur dans leur dernière version
     """
     try:
-        fiches = fiches_service_instance.bdd_service.get_all_sectors()
+        fiches = fiches_service_instance.get_all_fiche_sector()
         if fiches is None:
             raise HTTPException(
                 status_code=404,
@@ -213,7 +213,7 @@ async def get_fiche_by_id(id: int):
     Renvoie la fiche d'id id ou 404 si la fiche n'existe pas
     """
     try:
-        fiche = fiches_service_instance.bdd_service.get_fiche_by_id(id)
+        fiche = fiches_service_instance.get_fiche_by_id(id)
         if fiche is None:
             raise HTTPException(
                 status_code=404,

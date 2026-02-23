@@ -8,10 +8,10 @@ from service.bdd_service.bdd_service import PostgresService
 from service.chunk_service.chunk_service import ChunkService
 from service.embedding_service.embedding_service import EmbeddingService
 from service.rerank_service.rerank_service import ReRankService
+from service.bucket_service.bucket_service import BucketService
 import json
 from model.config import Config
 from constant import rag_constant
-from fastapi import UploadFile
 from config.logging_config import get_logger
 
 # Logger pour ce module
@@ -35,6 +35,7 @@ class fiches_service():
         self.llm_service = LlmService(self.config)
         self.bdd_service = PostgresService()
         self.rerank_service = ReRankService()
+        self.bucket_service = BucketService()
         logger.info("RAG Service initialisé avec succès")
 
     
@@ -79,9 +80,9 @@ class fiches_service():
         ## retrieve from db vect
         all_sources = []
 
-        results_metadata_summary = self.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources)
-        results_first_part = self.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources)
-        results_last_part = self.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources)
+        results_metadata_summary = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources, self.rerank_service)
+        results_first_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources, self.rerank_service)
+        results_last_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources, self.rerank_service)
 
         # Dédoublonner les sources par file_name + page + chunk
         seen = set()
@@ -204,47 +205,19 @@ class fiches_service():
         print(fiche_solution_json)
         return fiche_solution_json
 
-    ##tools
-    def retrieve_from_collection(self, collection, embedded_fields, all_sources):
-            results_dict = {}
-            for field, embedding in embedded_fields.items():
-                # 1. Retrieval large depuis ChromaDB
-                results = collection.query(
-                    query_embeddings=embedding,
-                    n_results=rag_constant.N_RESULTS_INITIAL,
-                )
-                documents = results.get("documents", [])
-                metadatas = results.get("metadatas", [])
+    def get_fiche_history(self, id: int):
+        history = self.bdd_service.get_one_fiche_history(id)
+        return history
 
-                if documents and len(documents) > 0:
-                    docs = documents[0]
-                    metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+    def update_fiche(self,id: int, data):
+        updated_id = self.bdd_service.update_fiche(id, data.model_dump())
+        return updated_id
 
-                    # 2. Re-ranking avec FlashRank
-                    reranked_docs, reranked_metas = self.rerank_service.rerank(
-                        query=field,
-                        documents=docs,
-                        metadatas=metas,
-                        top_k=rag_constant.N_RESULTS_RERANKED
-                    )
+    def get_all_fiche_solution(self):
+        return self.bdd_service.get_all_solutions()
+    
+    def get_all_fiche_sector(self):
+        return self.bdd_service.get_all_sectors()
 
-                    # 3. Enrichir avec les sources
-                    enriched_docs = []
-                    for doc, meta in zip(reranked_docs, reranked_metas):
-                        file_name = meta.get("file_name", "")
-                        page = meta.get("page", "")
-                        enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
-                        all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
-                    results_dict[field] = enriched_docs
-                else:
-                    results_dict[field] = []
-            return results_dict
-
-if __name__ == "__main__":
-    #test simulé comme utilisé avec l'api
-    fiches_service_instance = fiches_service()
-    with open("src/main/service/ressources_pdf/a.pdf", "rb") as f:
-        mock_pdf = UploadFile(file=f, filename="a.pdf")
-        fiches_service_instance.process_sector(mock_pdf)
-
-
+    def get_fiche_by_id(self,id: int):
+        return self.bdd_service.get_fiche_by_id(id)

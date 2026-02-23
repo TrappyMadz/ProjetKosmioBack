@@ -3,6 +3,7 @@ import chromadb
 from chromadb.config import Settings
 from dotenv import load_dotenv
 from config.logging_config import get_logger
+from constant import rag_constant
 
 # Logger pour ce module
 logger = get_logger("database_vect_service")
@@ -101,3 +102,38 @@ class DatabaseVectService():
     def heartbeat(self):
         client.client.heartbeat()
 
+    ##tools
+    def retrieve_from_collection(self, collection, embedded_fields, all_sources, rerank_service):
+            results_dict = {}
+            for field, embedding in embedded_fields.items():
+                # 1. Retrieval large depuis ChromaDB
+                results = collection.query(
+                    query_embeddings=embedding,
+                    n_results=rag_constant.N_RESULTS_INITIAL,
+                )
+                documents = results.get("documents", [])
+                metadatas = results.get("metadatas", [])
+
+                if documents and len(documents) > 0:
+                    docs = documents[0]
+                    metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+
+                    # 2. Re-ranking avec FlashRank
+                    reranked_docs, reranked_metas = rerank_service.rerank(
+                        query=field,
+                        documents=docs,
+                        metadatas=metas,
+                        top_k=rag_constant.N_RESULTS_RERANKED
+                    )
+
+                    # 3. Enrichir avec les sources
+                    enriched_docs = []
+                    for doc, meta in zip(reranked_docs, reranked_metas):
+                        file_name = meta.get("file_name", "")
+                        page = meta.get("page", "")
+                        enriched_docs.append(f"[Source: {file_name}, Page: {page}] {doc}")
+                        all_sources.append({"file_name": file_name, "page": page, "chunk": doc})
+                    results_dict[field] = enriched_docs
+                else:
+                    results_dict[field] = []
+            return results_dict
