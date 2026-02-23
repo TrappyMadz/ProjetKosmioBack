@@ -112,6 +112,7 @@ def get_fiche_history(id: int):
     Renvoie une erreur 404 si la fiche n'existe pas ou qu'elle n'a pas "d'ancienne version" (aucune modifications ?).
     """
     try:
+        history = fiches_service_instance.get_fiche_history(id)
         if history is None:
             raise HTTPException(
                 status_code=404,
