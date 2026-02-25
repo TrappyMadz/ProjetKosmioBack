@@ -164,9 +164,9 @@ class fiches_service():
         ## retrieve from db vect
         all_sources = []
 
-        results_metadata_summary = self.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources)
-        results_first_part = self.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources)
-        results_last_part = self.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources)
+        results_metadata_summary = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources, self.rerank_service)
+        results_first_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources, self.rerank_service)
+        results_last_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources, self.rerank_service)
 
         # Dédoublonner les sources par file_name + page + chunk
         seen = set()
@@ -210,7 +210,7 @@ class fiches_service():
         return history
 
     def update_fiche(self,id: int, data):
-        updated_id = self.bdd_service.update_fiche(id, data.model_dump())
+        updated_id = self.bdd_service.update_fiche(id, data)
         return updated_id
 
     def get_all_fiche_solution(self):
