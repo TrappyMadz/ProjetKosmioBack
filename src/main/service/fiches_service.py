@@ -72,7 +72,7 @@ class fiches_service():
         self.database_vect_service.collection_store_embedded_document(collection, document_chunked_filtered, document_embedded_filtered)
         logger.info(f"Stocké {len(document_chunked_filtered)} chunks dans ChromaDB")
 
-        #embedding question
+        #embedding fields
         embedded_fields_metadata_summary = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_METADATA_SUMMARY)
         embedded_fields_content_firstpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_FIRST_PART)
         embedded_fields_content_lastpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_LAST_PART)
