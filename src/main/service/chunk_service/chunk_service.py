@@ -10,7 +10,6 @@ class ChunkService():
             self.config = config
 
       def chunk(self, pages, size, overlap):
-            # Split text in chunk
             logger.debug("Début du découpage du document...")
             splitter = RecursiveCharacterTextSplitter(chunk_size=size,
                                                       chunk_overlap=overlap,

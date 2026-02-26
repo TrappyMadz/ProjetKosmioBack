@@ -25,7 +25,8 @@ def load_file(file):
         
 
 class fiches_service():
-    def __init__(self):  #remettre src/main
+    def __init__(self):
+        # Chargement de la configuration
         self.config = Config(load_file("src/main/config/config.json"))
 
         # services declaration
