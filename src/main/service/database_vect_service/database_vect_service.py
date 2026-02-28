@@ -110,6 +110,7 @@ class DatabaseVectService():
                 results = collection.query(
                     query_embeddings=embedding,
                     n_results=rag_constant.N_RESULTS_INITIAL,
+                    include=["documents", "metadatas"]
                 )
                 documents = results.get("documents", [])
                 metadatas = results.get("metadatas", [])
@@ -117,6 +118,10 @@ class DatabaseVectService():
                 if documents and len(documents) > 0:
                     docs = documents[0]
                     metas = metadatas[0] if metadatas and len(metadatas) > 0 else [{}] * len(docs)
+
+                    if not docs:
+                        results_dict[field] = []
+                        continue
 
                     # 2. Re-ranking avec FlashRank
                     reranked_docs, reranked_metas = rerank_service.rerank(

@@ -75,14 +75,16 @@ class fiches_service():
 
         #embedding fields
         embedded_fields_metadata_summary = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_METADATA_SUMMARY)
-        embedded_fields_content_firstpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_FIRST_PART)
+        embedded_fields_content_firstpart_a = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_FIRST_PART_A)
+        embedded_fields_content_firstpart_b = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_FIRST_PART_B)
         embedded_fields_content_lastpart = self.embedding_service.embedding_bge_multilingual_dict(rag_constant.SECTOR_QUERIES_LAST_PART)
 
         ## retrieve from db vect
         all_sources = []
 
         results_metadata_summary = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_metadata_summary, all_sources, self.rerank_service)
-        results_first_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_firstpart, all_sources, self.rerank_service)
+        results_first_part_a = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_firstpart_a, all_sources, self.rerank_service)
+        results_first_part_b = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_firstpart_b, all_sources, self.rerank_service)
         results_last_part = self.database_vect_service.retrieve_from_collection(collection, embedded_fields_content_lastpart, all_sources, self.rerank_service)
 
         # Dédoublonner les sources par file_name + page + chunk
@@ -95,13 +97,14 @@ class fiches_service():
                 unique_sources.append(s)
 
         dict_to_string_metadata_summary = json.dumps(results_metadata_summary, ensure_ascii=False)
-        dict_to_string_first_part = json.dumps(results_first_part, ensure_ascii=False)
+        dict_to_string_first_part_a = json.dumps(results_first_part_a, ensure_ascii=False)
+        dict_to_string_first_part_b = json.dumps(results_first_part_b, ensure_ascii=False)
         dict_to_string_last_part = json.dumps(results_last_part, ensure_ascii=False)
-        logger.debug(f"Contexte RAG préparé pour le LLM (metadata: {len(dict_to_string_metadata_summary)}, first: {len(dict_to_string_first_part)}, last: {len(dict_to_string_last_part)} caractères)")
+        logger.debug(f"Contexte RAG préparé pour le LLM (metadata: {len(dict_to_string_metadata_summary)}, first_a: {len(dict_to_string_first_part_a)}, first_b: {len(dict_to_string_first_part_b)}, last: {len(dict_to_string_last_part)} caractères)")
 
         ##appel llm le retour est un json au format demandé
         logger.info("Appel du LLM Mistral pour génération de la fiche secteur")
-        mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string_metadata_summary, dict_to_string_first_part, dict_to_string_last_part)
+        mistral_request_secteur = self.llm_service.mistral_request_secteur(dict_to_string_metadata_summary, dict_to_string_first_part_a, dict_to_string_first_part_b, dict_to_string_last_part)
         
         # Injection de la traçabilité des sources dans le JSON
         mistral_request_secteur["data"]["traceability"] = {

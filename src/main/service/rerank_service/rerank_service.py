@@ -8,7 +8,7 @@ logger = get_logger("rerank_service")
 class ReRankService:
     def __init__(self):
         logger.info("Chargement du modèle de re-ranking FlashRank...")
-        self.ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
+        self.ranker = Ranker(model_name="ms-marco-MultiBERT-L-12")
         logger.info("Modèle de re-ranking chargé avec succès")
 
     def rerank(self, query: str, documents: list, metadatas: list, top_k: int = 5) -> tuple:

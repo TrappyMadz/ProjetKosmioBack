@@ -1,104 +1,113 @@
 # Paramètres du chunk
+CHUNK_SIZE = 2000
+OVERLAP = 400
 
-CHUNK_SIZE = 1000
-OVERLAP = 150
-
-# Paramètres LLM
-N_RESULTS_INITIAL = 20
+# Paramètres de retrieval
+N_RESULTS_INITIAL = 50
 N_RESULTS_RERANKED = 5
 
+
+
+# ============================================================================ #
+#  QUERIES SECTEUR — utilisées pour le retrieval vectoriel                      #
+#  Les descriptions doivent cibler le CONTENU RÉEL du document, pas la TDM.     #
+# ============================================================================ #
+
 SECTOR_QUERIES_METADATA_SUMMARY = {
-    "title": "le titre de la fiche qui correspond au nom du secteur",
-    "sub_sectors": "liste des sous-secteurs associés au secteur",
-    "company_size": "type d'entreprise sous la forme TPE, PME ou ETI",
-    "contributors": "liste des entreprises ayant contribué à cette publication",
-    "summary": "résumé des activités, typologies de sites, contraintes métiers",
+    "title": "plan de transition sectoriel, nom du secteur industriel étudié",
+    "sub_sectors": "sous-secteurs industriels couverts, filières de production, variantes ou segments du secteur",
+    "company_size": "taille des entreprises concernées, TPE PME ETI grands groupes industriels",
+    "contributors": "entreprises participantes, partenaires industriels, organismes ayant contribué au rapport",
+    "summary": "présentation du secteur industriel, description de la filière, activités principales, procédés de fabrication, volumes de production annuels en France",
 }
 
-SECTOR_QUERIES_FIRST_PART = {
-    # --- Émissions ---
-    "emissions_profile": "répartition des postes d'émissions : process, utilities, building, transport, waste en pourcentage ou ordre de grandeur",
+SECTOR_QUERIES_FIRST_PART_A = {
+    # --- Description & Émissions ---
+    "description": "présentation détaillée du secteur industriel, description des activités principales, procédés de fabrication, volumes de production en France, positionnement international",
+    "emissions_profile": "répartition des émissions de CO2 et gaz à effet de serre par poste : procédés industriels en pourcentage, consommation d'énergie utilities, bâtiments, transport logistique, déchets, bilan carbone de la filière",
+}
 
+SECTOR_QUERIES_FIRST_PART_B = {
     # --- Enjeux ---
-    "challenges": "liste des enjeux avec le titre et la description de chaque enjeu",
+    "challenges": "enjeux majeurs de la décarbonation du secteur, défis technologiques, contraintes économiques, compétitivité internationale, dépendance aux matières premières, transition énergétique, impact sur l'emploi",
 
     # --- Réglementations ---
-    "regulations": "liste des réglementations importantes à prendre en compte",
+    "regulations": "cadre réglementaire, système d'échange de quotas EU-ETS, SNBC stratégie nationale bas carbone, taxonomie européenne, CBAM mécanisme d'ajustement carbone aux frontières, directive sur les émissions industrielles",
 
     # --- Systèmes ---
-    "systems_matrix": "liste des systèmes et solutions clés avec le nom du système, l'impact (Faible, Moyen, Fort), la priorité (échelle de 1 à 5) et la liste des solutions",
+    "systems_matrix": "technologies de décarbonation, solutions techniques identifiées, captage et stockage du CO2, efficacité énergétique, économie circulaire recyclage, substitution de combustibles, électrification des procédés, récupération de chaleur",
 }
 
 SECTOR_QUERIES_LAST_PART = {
     # --- Parcours sectoriel ---
-    "sector_path": "parcours sectoriel recommandé avec les phases (Quick wins, Optimisations, Investissements structurants, Nouvelles énergies, Management & pilotage) et les actions associées à chaque phase",
+    "sector_path": "feuille de route de décarbonation, actions à court terme quick wins, optimisations à moyen terme, investissements structurants, changement de combustible, jalons de réduction des émissions à 2030 et 2050",
 
     # --- Cas d'usage ---
-    "use_case": "liste des actions à réaliser par sous-secteur avec le sous-secteur concerné, les actions à effectuer, les résultats chiffrés et le lien vers la fiche projet",
+    "use_case": "exemples concrets de mise en œuvre, projets pilotes, sites industriels ayant déployé des solutions de décarbonation, résultats chiffrés de réduction d'émissions, retours d'expérience",
 
     # --- Ressources ---
-    "resources": "liste des ressources documentaires avec le titre, le type et le lien de chaque ressource",
+    "resources": "documents de référence, rapports techniques, guides méthodologiques, publications scientifiques, liens URL vers les ressources en ligne",
 }
 
 
+# ============================================================================ #
+#  QUERIES SOLUTION — utilisées pour le retrieval vectoriel                     #
+# ============================================================================ #
 
 SOLUTION_QUERIES_METADATA_SUMMARY = {
     # --- Identité ---
-    "title": "nom de la solution",
-    "category": "catégorie de la solution",
-    "system": "système technique utilisé par la solution",
-    "type": "type de solution technique organisationnelle ou comportementale",
-    "maturity": "niveau de maturité de la solution",
-    "cost_scale": "échelle de coût de la solution",
-    "complexity": "complexité de mise en œuvre de la solution",
-    "contributors": "entreprises ou acteurs ayant contribué à la solution",
+    "title": "nom de la solution technique, intitulé de la technologie ou du procédé",
+    "category": "catégorie de la solution : efficacité énergétique, récupération de chaleur, énergies renouvelables, captage CO2, économie circulaire",
+    "system": "système technique concerné : chaudière, four, échangeur, compresseur, réseau de chaleur, procédé industriel",
+    "type": "nature de la solution : technique, organisationnelle ou comportementale",
+    "maturity": "niveau de maturité technologique TRL, solution éprouvée, en développement ou émergente",
+    "cost_scale": "ordre de grandeur du coût d'investissement, échelle de coût faible moyen élevé",
+    "complexity": "complexité de mise en œuvre, facilité d'intégration, durée du déploiement",
+    "contributors": "entreprises ou organismes ayant contribué à la rédaction de la fiche, partenaires industriels",
 
     # --- Résumé ---
-    "summary": "résumé et description générale de la solution",
+    "summary": "description générale de la solution, principe de fonctionnement en quelques phrases, bénéfices principaux pour la réduction des émissions",
 }
-
 
 SOLUTION_QUERIES_FIRST_PART = {
     # --- Contexte ---
-    "context_objective": "objectif principal de la solution",
-    "context_target_sites": "types de sites concernés par la solution",
-    "context_scope_includes": "éléments inclus dans le périmètre de la solution",
-    "context_scope_excludes": "éléments exclus du périmètre de la solution",
-    "context_prerequisites": "prérequis réglementaires techniques ou organisationnels",
+    "context_objective": "objectif principal de la solution en termes de réduction d'émissions ou d'économie d'énergie",
+    "context_target_sites": "types de sites industriels concernés par la solution, secteurs d'application, logements collectifs, tertiaire",
+    "context_scope_includes": "périmètre couvert par la solution, éléments inclus dans le champ d'application",
+    "context_scope_excludes": "éléments hors périmètre, cas non couverts par la solution",
+    "context_prerequisites": "prérequis techniques réglementaires ou organisationnels nécessaires à la mise en œuvre",
 
     # --- Mécanisme ---
-    "mechanism_description": "principe de fonctionnement de la solution",
-    "mechanism_variants": "variantes ou déclinaisons possibles de la solution",
+    "mechanism_description": "principe de fonctionnement détaillé de la solution, processus technique, réactions chimiques ou physiques impliquées",
+    "mechanism_variants": "variantes technologiques disponibles, déclinaisons possibles de la solution, options de dimensionnement",
 
     # --- Applicabilité ---
-    "applicability_conditions": "conditions d’usage pertinentes de la solution",
-    "applicability_avoid_if": "cas où la solution est déconseillée",
-    "applicability_constraints": "contraintes liées à l’utilisation de la solution",
+    "applicability_conditions": "conditions dans lesquelles la solution est pertinente et efficace, critères de faisabilité",
+    "applicability_avoid_if": "situations où la solution est déconseillée, contre-indications techniques ou économiques",
+    "applicability_constraints": "contraintes techniques, réglementaires ou opérationnelles liées à l'utilisation de la solution",
 
     # --- Impacts ---
-    "impact_energy": "économies ou valorisation d’énergie liées à la solution",
-    "impact_co2": "réduction ou évitement des émissions de CO2",
-    "impact_capex": "coûts d’investissement CAPEX de la solution",
-    "impact_opex": "coûts d’exploitation OPEX de la solution",
-    "impact_roi": "retour sur investissement de la solution",
-    "impact_co_benefits": "bénéfices indirects ou co-bénéfices",
+    "impact_energy": "gains énergétiques, économies d'énergie en kWh ou pourcentage, réduction de la consommation",
+    "impact_co2": "réduction des émissions de CO2 en tonnes par an ou en pourcentage, potentiel de décarbonation",
+    "impact_capex": "coût d'investissement CAPEX en euros, fourchette de prix, exemples chiffrés",
+    "impact_opex": "coûts d'exploitation OPEX, économies opérationnelles, coûts de maintenance",
+    "impact_roi": "retour sur investissement, temps de retour en années, rentabilité économique",
+    "impact_co_benefits": "co-bénéfices de la solution : amélioration du confort, qualité de l'air, réduction du bruit, création d'emplois",
 
     # --- Leviers ---
-    "levers": "leviers techniques ou organisationnels associés à la solution",
- }
- 
+    "levers": "leviers d'action pour maximiser l'impact de la solution, facteurs clés de succès, bonnes pratiques",
+}
 
 SOLUTION_QUERIES_LAST_PART = {
     # --- Mise en œuvre ---
-    "implementation_path": "liste des étapes de mise en œuvre : Diagnostic initial, Dimensionnement, Installation, Suivi avec les détails pour chaque étape",
+    "implementation_path": "étapes de mise en œuvre : diagnostic initial audit énergétique, dimensionnement et étude de faisabilité, installation et déploiement, suivi et mesure des performances",
 
     # --- Risques ---
-    "risks": "liste des risques associés à la solution",
+    "risks": "risques techniques ou économiques associés à la solution, points de vigilance, obstacles potentiels",
 
     # --- Exemples ---
-    "exemples": "liste des cas d'usage sectoriels avec le secteur, un résumé de l'utilisation et le lien vers la fiche secteur",
+    "exemples": "cas d'usage réels, retours d'expérience sectoriels, entreprises ayant déployé la solution avec résultats chiffrés",
 
     # --- Ressources ---
-    "resources": "liste des ressources documentaires avec le titre, le type et le lien de chaque ressource"
+    "resources": "documents de référence, guides techniques, liens vers les publications et fiches projets associées"
 }
-

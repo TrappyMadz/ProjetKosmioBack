@@ -30,9 +30,11 @@ class SystemMatrix(BaseModel):
         priority: str
         solutions: list[str]
 
-class JsonSecteur2(BaseModel):
+class JsonSecteur2A(BaseModel):
         description: str
         emissions_profile: list[EmissionsProfile]
+
+class JsonSecteur2B(BaseModel):
         contexte: list[Challenge]
         regulations: list[str]
         systems_matrix: list[SystemMatrix]
@@ -54,5 +56,5 @@ class Resource(BaseModel):
         link: str
 class JsonSecteur3(BaseModel):
         sector_path: list[SectorPath]
-        use_cases: list[UseCase]
+        use_case: list[UseCase]
         resources: list[Resource]

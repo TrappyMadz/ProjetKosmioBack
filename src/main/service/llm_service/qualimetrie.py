@@ -268,7 +268,7 @@ def json_bien_constitue_secteur(data):
     if "content" in champs_json:
         champs_attendus_n2 = {
             "emissions_profile", "challenges", "regulations",
-            "systems_matrix", "sector_path", "use_cases", "resources"
+            "systems_matrix", "sector_path", "use_case", "resources"
         }
         champs_content = set(data["content"].keys())
         res_entrop.append("content :" + str(champs_content.difference(champs_attendus_n2)))
@@ -315,17 +315,17 @@ def json_bien_constitue_secteur(data):
             else:
                 res_enmoins.append("content.sector_path (liste vide) :" + str(champs_attendus_n3))
 
-        if "use_cases" in champs_content:
-            use_cases = data["content"]["use_cases"]
+        if "use_case" in champs_content:
+            use_case = data["content"]["use_case"]
             champs_attendus_n3 = {"sub_sector", "actions", "results", "link"}
-            if isinstance(use_cases, list) and len(use_cases) > 0:
+            if isinstance(use_case, list) and len(use_case) > 0:
                 try :
-                    res_entrop.append("content.use_cases :" + str(set(use_cases[0].keys()).difference(champs_attendus_n3)))
-                    res_enmoins.append("content.use_cases :" + str(champs_attendus_n3.difference(set(use_cases[0].keys()))))
+                    res_entrop.append("content.use_case :" + str(set(use_case[0].keys()).difference(champs_attendus_n3)))
+                    res_enmoins.append("content.use_case :" + str(champs_attendus_n3.difference(set(use_case[0].keys()))))
                 except Exception as e:
-                    res_enmoins.append("content.use_cases :" + str(champs_attendus_n3))
+                    res_enmoins.append("content.use_case :" + str(champs_attendus_n3))
             else:
-                res_enmoins.append("content.use_cases (liste vide) :" + str(champs_attendus_n3))
+                res_enmoins.append("content.use_case (liste vide) :" + str(champs_attendus_n3))
 
         if "resources" in champs_content:
             resources = data["content"]["resources"]

@@ -479,7 +479,7 @@ def test():
                     "action": "Certification ISO 50001 et mise en place d'un système de management de l'énergie (SME)."
                 }
             ],
-            "use_cases": [
+            "use_case": [
                 {
                     "sub_sector": "Laiterie",
                     "actions": "Installation d'une PAC sur les buées de séchage.",

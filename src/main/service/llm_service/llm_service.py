@@ -3,7 +3,7 @@ import json
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from model.structure_secteur_pour_llm import JsonSecteur1, JsonSecteur2, JsonSecteur3
+from model.structure_secteur_pour_llm import JsonSecteur1, JsonSecteur2A, JsonSecteur2B, JsonSecteur3
 import service.llm_service.qualimetrie as qualimetrie 
 import math
 from config.logging_config import get_logger
@@ -22,6 +22,14 @@ class LlmService():
 
         url = self.config.url_model_llm
 
+        # Estimation dynamique de max_tokens
+        # ~4 caractères par token pour le tokenizer Mistral en français
+        input_text = prompt + content + json.dumps(obj.model_json_schema())
+        estimated_input_tokens = len(input_text) // 4
+        context_window = 32768
+        max_output_tokens = min(12000, max(2000, context_window - estimated_input_tokens - 500))
+        print(f"[TOKEN-DIAG] input_chars={len(input_text)}, estimated_input_tokens={estimated_input_tokens}, max_output={max_output_tokens}")
+
         payload = {
             "messages": [
                 {"content": prompt, "role": "system"},
@@ -36,7 +44,8 @@ class LlmService():
                     "schema": obj.model_json_schema()
                 }
             },
-            "logprobs": True
+            "logprobs": True,
+            "max_tokens": max_output_tokens
         }
         
         headers = {
@@ -65,7 +74,7 @@ class LlmService():
                 json=payload, 
                 headers=headers, 
                 verify=False, 
-                timeout=(20, 150) 
+                timeout=(100, 600) 
             )
             print(f"Réponse reçue de Mistral avec le code {response.status_code}")
 
@@ -77,6 +86,8 @@ class LlmService():
                     return {"error": "No choices in response"}
 
                 text = choices[0]["message"]["content"]
+                finish_reason = choices[0].get("finish_reason", "unknown")
+                print(f"[LLM-DIAG] finish_reason={finish_reason}, response_length={len(text)}")
 
                 # Récupérer les logprobs si présents
                 logprobs = []
@@ -90,7 +101,31 @@ class LlmService():
                     parsed = json.loads(text)
                     return {"data": parsed, "text": text, "logprobs": logprobs}
                 except json.JSONDecodeError:
-                    print("Failed to parse JSON content, returning raw text.")
+                    print(f"[JSON-DIAG] Parse failed. First 500 chars: {text[:500]}")
+                    print(f"[JSON-DIAG] Last 200 chars: {text[-200:]}")
+                    # Tentative 2 : retirer les code fences markdown ```json ... ```
+                    cleaned = text.strip()
+                    if cleaned.startswith("```"):
+                        # Retirer la première ligne (```json) et la dernière (```)
+                        lines = cleaned.split("\n")
+                        cleaned = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+                    try:
+                        parsed = json.loads(cleaned)
+                        print("[JSON-DIAG] Parsed after stripping markdown fences")
+                        return {"data": parsed, "text": text, "logprobs": logprobs}
+                    except json.JSONDecodeError:
+                        pass
+                    # Tentative 3 : extraire le JSON entre { et }
+                    start = text.find("{")
+                    end = text.rfind("}")
+                    if start != -1 and end != -1 and end > start:
+                        try:
+                            parsed = json.loads(text[start:end+1])
+                            print("[JSON-DIAG] Parsed after extracting between { and }")
+                            return {"data": parsed, "text": text, "logprobs": logprobs}
+                        except json.JSONDecodeError:
+                            pass
+                    print("[JSON-DIAG] All parse attempts failed, returning None")
                     return {"data": None, "text": text, "logprobs": logprobs}
             else:
                 print(f"Error {response.status_code}: {response.text}")
@@ -220,22 +255,23 @@ class LlmService():
 
         return {"data" : final_json, "qualimetrie":{ "completion": tauxCompletion, "confiance": c["global_confidence"]}}
     
-    # Fonction qui lance les 3 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution, avec gestion des erreurs de flux et d'execution
-    def mistral_request_secteur(self,content_metadata_summary, content_firstpart, content_lastpart):
+    # Fonction qui lance les 4 requetes mistral pour récupérer les différentes parties du json solution, puis les assemble en un json final et calcul le taux de complétion de la fiche solution, avec gestion des erreurs de flux et d'execution
+    def mistral_request_secteur(self,content_metadata_summary, content_firstpart_a, content_firstpart_b, content_lastpart):
 
         ## Les prompts pour chaques parties
         prompt_title_metadata_summary = llm_constant.PROMPT_SECTEUR_TITLE_METADATA_SUMMARY
-        ## Attention les deux resultats de ces prompt son à integrer dans content IL MANQUE DESCRIPTION ?
-        prompt_content_firstpart = llm_constant.PROMPT_SECTEUR_CONTENT_FIRSTPART
+        prompt_content_firstpart_a = llm_constant.PROMPT_SECTEUR_CONTENT_FIRSTPART_A
+        prompt_content_firstpart_b = llm_constant.PROMPT_SECTEUR_CONTENT_FIRSTPART_B
         prompt_content_lastpart = llm_constant.PROMPT_SECTEUR_CONTENT_LASTPART
 
-        # Lancement des 3 requêtes pour récupérer les json (exécution en parallèle)
+        # Lancement des 4 requêtes pour récupérer les json (exécution en parallèle)
         results = {}
         logprobs_t = []
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             future_to_key = {
                 executor.submit(self.mistral_request, prompt_title_metadata_summary, content_metadata_summary, JsonSecteur1): "title_metadata_summary",
-                executor.submit(self.mistral_request, prompt_content_firstpart, content_firstpart, JsonSecteur2): "content_firstpart",
+                executor.submit(self.mistral_request, prompt_content_firstpart_a, content_firstpart_a, JsonSecteur2A): "content_firstpart_a",
+                executor.submit(self.mistral_request, prompt_content_firstpart_b, content_firstpart_b, JsonSecteur2B): "content_firstpart_b",
                 executor.submit(self.mistral_request, prompt_content_lastpart, content_lastpart, JsonSecteur3): "content_lastpart",
             }
             for future in as_completed(future_to_key):
@@ -258,7 +294,6 @@ class LlmService():
 
         # Validation et normalisation des fragments
 
-        print (f"Logprobs totaux : {logprobs_t}")
         def _safe_dict(res, name):
             if res is None:
                 print(f"Fragment {name} returned None, using empty dict")
@@ -278,7 +313,8 @@ class LlmService():
             return {}
 
         json_title_metadata_summary = _safe_dict(results.get("title_metadata_summary"), "title_metadata_summary")
-        json_content_firstpart = _safe_dict(results.get("content_firstpart"), "content_firstpart")
+        json_content_firstpart_a = _safe_dict(results.get("content_firstpart_a"), "content_firstpart_a")
+        json_content_firstpart_b = _safe_dict(results.get("content_firstpart_b"), "content_firstpart_b")
         json_content_lastpart = _safe_dict(results.get("content_lastpart"), "content_lastpart")
 
         # Création du json final avec calcul du taux de completion
@@ -291,10 +327,12 @@ class LlmService():
             "content": {}
         }
 
-        # Fusionner en sécurité les deux parties de content
+        # Fusionner en sécurité les trois parties de content
         final_content = {}
-        if isinstance(json_content_firstpart, dict):
-            final_content.update(json_content_firstpart)
+        if isinstance(json_content_firstpart_a, dict):
+            final_content.update(json_content_firstpart_a)
+        if isinstance(json_content_firstpart_b, dict):
+            final_content.update(json_content_firstpart_b)
         if isinstance(json_content_lastpart, dict):
             final_content.update(json_content_lastpart)
         final_json["content"] = final_content
@@ -495,7 +533,7 @@ class LlmService():
                 json=payload, 
                 headers=headers, 
                 verify=False, 
-                timeout=(20, 150) 
+                timeout=(100, 600) 
             )
 
             if response.status_code == 200:
@@ -565,7 +603,7 @@ class LlmService():
                 json=payload, 
                 headers=headers, 
                 verify=False, 
-                timeout=(20, 150) 
+                timeout=(100, 600) 
             )
 
             if response.status_code == 200:
